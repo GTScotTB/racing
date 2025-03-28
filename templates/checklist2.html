@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checklist</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header>
+    <h1>Checklist</h1>
+    <p>Driver: {{ entry.driver_name }}</p>
+    <p>Vehicle Number: {{ entry.vehicle_number }}</p>
+  </header>
+
+  <form id="checklistForm" action="/update_checklist2" method="POST">
+    <input type="hidden" name="checklist_id" value="{{ checklist.id }}">
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Item Name</th>
+          <th>Status</th>
+          <th>Additional Fields</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        {% if item.item_name == "Vehicle Weight" %}
+        <!-- Vehicle Weight Input -->
+        <tr>
+          <td>{{ item.item_name }}</td>
+          <td>
+            <input type="number" name="vehicle_weight_{{ item.id }}" value="{{ item.value or '' }}" step="0.1" required>
+          </td>
+          <td></td>
+        </tr>
+        {% elif item.item_name == "Scrutineer Name" %}
+        <!-- Scrutineer Name Dropdown -->
+        <tr>
+          <td>{{ item.item_name }}</td>
+          <td>
+            <select id="scrutineer-name-dropdown" name="scrutineer_name" onchange="updateLicenceNumber()" required>
+              <option value="" disabled selected>Select a Scrutineer</option>
+              {% for scrutineer in scrutineers %}
+              <option value="{{ scrutineer.id }}" data-licence-number="{{ scrutineer.licence_number }}" 
+                {% if scrutineer.id == checklist.scrutineer_name %}selected{% endif %}>
+                {{ scrutineer.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td></td>
+        </tr>
+        {% elif item.item_name == "Scrutineer Licence Number" %}
+        <!-- Scrutineer Licence Number Dropdown -->
+        <tr>
+          <td>{{ item.item_name }}</td>
+          <td>
+            <select id="scrutineer-licence-dropdown" name="scrutineer_licence_number" required>
+              <option value="" disabled selected>Select Licence Number</option>
+              {% for scrutineer in scrutineers %}
+              <option value="{{ scrutineer.licence_number }}" 
+                {% if scrutineer.licence_number == checklist.scrutineer_licence_number %}selected{% endif %}>
+                {{ scrutineer.licence_number }}
+              </option>
+              {% endfor %}
+            </select>
+          </td>
+          <td></td>
+        </tr>
+        {% elif item.item_name == "Date" %}
+        <!-- Date Field -->
+        <tr>
+          <td>{{ item.item_name }}</td>
+          <td>
+            <input type="text" name="date" value="{{ current_date }}" readonly>
+          </td>
+          <td></td>
+        </tr>
+        {% elif item.item_name == "Time" %}
+        <!-- Time Field -->
+        <tr>
+          <td>{{ item.item_name }}</td>
+          <td>
+            <input type="text" name="time" value="{{ current_time }}" readonly>
+          </td>
+          <td></td>
+        </tr>
+        {% else %}
+        <!-- General Checklist Items -->
+        <tr>
+          <td>{{ item.item_name }}</td>
+          <td>
+            <!-- Buttons for Pass, Fail, and N/A -->
+            <div>
+              <button type="button" class="status-button" data-item-id="{{ item.id }}" data-status="Pass">Pass</button>
+              <button type="button" class="status-button" data-item-id="{{ item.id }}" data-status="Fail">Fail</button>
+              <button type="button" class="status-button" data-item-id="{{ item.id }}" data-status="NA">N/A</button>
+            </div>
+            <!-- Hidden input to store the selected status -->
+            <input type="hidden" name="status_{{ item.id }}" id="status_{{ item.id }}" value="{{ item.status }}">
+            <span id="status-display-{{ item.id }}">{{ item.status }}</span>
+          </td>
+          <td>
+            <!-- Additional fields like brand, standard, etc., if applicable -->
+            {% if item.brand_required %}
+            <input type="text" name="brand_{{ item.id }}" value="{{ item.brand or '' }}" placeholder="Brand">
+            {% endif %}
+            {% if item.standard_required %}
+            <input type="text" name="standard_{{ item.id }}" value="{{ item.standard or '' }}" placeholder="Standard">
+            {% endif %}
+            {% if item.expiry_date_required %}
+            <input type="date" name="expiry_date_{{ item.id }}" value="{{ item.expiry_date or '' }}">
+            {% endif %}
+            {% if item.rops_required %}
+            <input type="text" name="rops_{{ item.id }}" value="{{ item.rops or '' }}" placeholder="ROPS">
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <button type="submit">Save Changes</button>
+  </form>
+
+  <button onclick="window.location.href='/lookup_entry2'">Back to Lookup</button>
+  <button onclick="window.location.href='/'">HOME</button>
+</body>
+</html>

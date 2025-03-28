@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Denied Start</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Denied Start</h1>
+  </header>
+
+  <section>
+    <p>Below is a list of vehicles where "Approved to Start" is set to "Fail":</p>
+
+    <!-- Toggle Button -->
+    <button onclick="window.location.href='?order_by={{ 'garage_number' if order_by == 'vehicle_number' else 'vehicle_number' }}'">
+      Order by {{ 'Garage Number' if order_by == 'vehicle_number' else 'Vehicle Number' }}
+    </button>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>Vehicle Number</th>
+          <th>Driver Name</th>
+          <th>Class</th>
+          <th>Garage Number</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.vehicle_number }}</td>
+          <td>{{ item.driver_name }}</td>
+          <td>{{ item.class_type }}</td>
+          <td>{{ item.garage_number or "Not Assigned" }}</td>
+          <td>
+            <form action="/view_checklist" method="POST" style="display:inline;">
+              <input type="hidden" name="entry_id" value="{{ item.entry_id }}">
+              <button type="submit">View Checklist</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Back to Home Button -->
+  <button onclick="window.location.href='/'">Back to Home</button>
+</body>
+</html>

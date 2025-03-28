@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrutineers List</title>
+</head>
+<body>
+    <h1>List of Scrutineers</h1>
+    <ul>
+        <!-- Dynamically generated scrutineers will go here -->
+        {% for scrutineer in scrutineers %}
+        <li>
+            <strong>Name:</strong> {{ scrutineer.name }}<br>
+            <strong>Licence Number:</strong> {{ scrutineer.licence_number }}
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
