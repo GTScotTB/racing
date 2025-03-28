@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Entry</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <header>
+    <h1>Add Entry</h1>
+  </header>
+
+  <!-- Entry Form -->
+  <form action="/add_entry" method="POST">
+    <label for="vehicle_number">Vehicle Number (required):</label>
+    <input type="text" id="vehicle_number" name="vehicle_number" required>
+
+    <label for="vehicle_make">Vehicle Make (required):</label>
+    <input type="text" id="vehicle_make" name="vehicle_make" required>
+
+    <label for="vehicle_model">Vehicle Model:</label>
+    <input type="text" id="vehicle_model" name="vehicle_model">
+
+    <label for="garage_number">Garage Number:</label>
+    <input type="text" id="garage_number" name="garage_number">
+
+    <label for="log_book_number">Log Book Number:</label>
+    <input type="text" id="log_book_number" name="log_book_number">
+
+    <label for="licence_number">Licence Number:</label>
+    <input type="text" id="licence_number" name="licence_number" value="000000">
+
+    <label for="driver_name">Driver's Name (required):</label>
+    <input type="text" id="driver_name" name="driver_name" required>
+
+    <label for="class">Class (required):</label>
+    <select id="class" name="class" required>
+      <option value="" disabled selected>Select Class</option>
+      {% for class in classes %}
+        <option value="{{ class }}">{{ class }}</option>
+      {% endfor %}
+    </select>
+    
+    <!-- First button: Add Entry -->
+    <button type="submit" name="action" value="add">Add Entry</button>
+
+    <!-- Second button: Add Entry and Inspect -->
+    <button type="submit" name="action" value="add_and_inspect">Add Entry and Inspect</button
+</form>
+<!-- Button to return to Home -->
+<button onclick="window.location.href='/'">Back to Home</button>
+</body>
+</html>
