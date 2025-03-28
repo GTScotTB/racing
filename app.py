@@ -863,4 +863,4 @@ def failed_items():
         return jsonify({'error': str(e)})
 # Run the application
 if __name__ == '__main__':
-    app.run(debug=True)  # Enable debug mode for development
+    app.run(host='0.0.0.0', port=5000, debug=True)  # Enable debug mode for development
