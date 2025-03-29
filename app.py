@@ -277,7 +277,7 @@ def view_checklist2():
         print(f"Found entry: {entry}")  # Debugging
 
         # Check if a checklist exists for this entry
-        checklist = db.session.get(InspectionChecklist, checklist_id)
+        checklist = InspectionChecklist.query.filter_by(entry_id=entry.id).first()
 
         if not checklist:
             print("No checklist found. Creating a new checklist.")  # Debugging
