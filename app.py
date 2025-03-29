@@ -1,9 +1,11 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
-from models import db, Entry, InspectionChecklist, InspectionItem, ChecklistItem, Officials, Roles
+from models import db,User, Entry, InspectionChecklist, InspectionItem, ChecklistItem, Officials, Roles
 from sqlalchemy import or_, func, Integer, text
 import os
 from datetime import datetime
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -15,6 +17,15 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', '85d85388ef8d36d589777628f0c6a3c6
 app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = SQLALCHEMY_TRACK_MODIFICATIONS
 
+#Login Manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Redirect to login page if not authenticated
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))  # Fetch user by ID
+
+
 # Initialize SQLAlchemy with Flask
 db.init_app(app)
 
@@ -25,10 +36,35 @@ def enable_foreign_keys():
         with db.engine.connect() as connection:
             connection.execute(text("PRAGMA foreign_keys=ON"))
 
-# Route: Home (serves the dashboard)
+# Route: Login (GET AND POST)
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.password == password:  # Replace with hashed password check
+            login_user(user)
+            return redirect(url_for('index'))  # Redirect to the dashboard after login
+        else:
+            return "Invalid credentials. Please try again.", 401
+        
+    return render_template('login.html')  # Render login form
+
+# Route: Logout
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))  # Redirect to login page after logout
+
+# Route: Home 
 @app.route('/')
+@login_required
 def index():
-    return render_template('index.html')  # Serves the main dashboard HTML
+    user_role = current_user.role  # Get the role of the logged-in user
+    return render_template('index.html', user=current_user, role=user_role)  # Render the home page
 
 # Route: Add Entry (GET)
 @app.route('/add_entry', methods=['GET'])
@@ -151,6 +187,8 @@ def lookup_entry():
 
 # Route: Lookup Entry2 (GET)
 @app.route('/lookup_entry2', methods=['GET'])
+@login_required
+# This route is similar to lookup_entry but its for loaded the button stye view page
 def lookup_entry2():
     search_query = request.args.get('search_query', '').strip()
 
@@ -793,7 +831,17 @@ def add_official():
     # Handle GET request
     roles = Roles.query.all()
     return render_template('add_official.html', roles=roles)
-   
+
+# Route: Admin View/Delete Entries
+
+# Route: Admin View/Delete Checklists
+
+# Route: Admin View/Delete Officials
+
+# Route: Admin Import CSV to Entries
+
+# Route: Admin Import CSV to Officials
+
 # Endpoint: Get total entries with vehicle_type 'W'
 @app.route('/total_entries', methods=['GET'])
 def total_entries():
@@ -861,6 +909,34 @@ def failed_items():
     except Exception as e:
         # Handle any errors
         return jsonify({'error': str(e)})
+# END OF WORLD TIME ATTACK PROGRAMMING
+
+# Route: Formula Ford Home
+
+# Route: Formula Ford Compeditors
+
+# Route: Formula Ford Engines
+
+# Route: Formula Ford ECU
+
+# Route: Formula Ford Tyres
+
+# Route: Formula Ford Weights
+
+# Route: Formula Ford Height
+
+# Route: Formula Ford Dash Data
+
+# Route: Formula Ford Eligibility Test
+
+# Route: Formula Ford View Checks
+
+# Route: Formula Ford Import via CSV
+
+# Route: Formula Ford Weekend Report
+
+# Route: Formula Ford Issue Tracking
+
 # Run the application
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)  # Enable debug mode for development

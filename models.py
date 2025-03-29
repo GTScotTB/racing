@@ -1,6 +1,20 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
 
 db = SQLAlchemy()
+
+# User Models for Auth
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'  # Matches your SQLite table name
+
+    id = db.Column(db.Integer, primary_key=True)  # Unique user ID
+    username = db.Column(db.String(80), unique=True, nullable=False)  # Unique username
+    password = db.Column(db.String(120), nullable=False)  # Hashed password
+    role = db.Column(db.String(20), nullable=False)  # Role (e.g., admin, user)
+
+    def __repr__(self):
+        return f"<User {self.username}>"
+
 
 # Entry Model (Existing)
 class Entry(db.Model):

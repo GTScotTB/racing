@@ -36,5 +36,17 @@
     <button onclick="window.location.href='/garage_numbers'">View Garage Numbers</button>
     <button onclick="window.location.href='/vehicle_weights'">View Vehicle Weights</button>
   </section>
+  {% if role == 'admin' %}
+    <section id="Admin Buttons">
+    <h2>Admin Actions</h2>
+    <button class="admin-button" onclick="window.location.href='/manage_entries'">Manage Entries</button>
+    <button class="admin-button" onclick="window.location.href='/manage_checklists'">Manage Checklists</button>
+    </section>
+  {% else %}
+  {% endif %}
+    <section id="logout">
+    <h2>Logout</h2>
+    <button class="auth-button" onclick="window.location.href='/logout'">Logout</button>
+    </section>
 </body>
 </html>

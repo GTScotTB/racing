@@ -42,7 +42,36 @@ body {
     background: #0056b3;
   }
   
-  ul {
+  .admin-button {
+    background-color: #ff0000; /* Bright red */
+    color: white; /* Text color */
+    border: 2px solid #cc0000; /* Slightly darker red for the border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+  .admin-button:hover {
+    background-color: #ff6600; /* Orange on hover */
+    border-color: #ff4500; /* Slightly darker orange for the border */
+}
+
+  .auth-button {
+    background-color: #28a745; /* Green */
+    color: rgb(9, 8, 8); /* Text color */
+    border: 2px solid #218838; /* Slightly darker green for the border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+  .auth-button:hover {
+    background-color: #218838; /* Darker green on hover */
+    border-color: #1e7e34; /* Slightly darker green for the border */
+}
+ 
+    ul {
     list-style-type: none;
     padding: 0;
   }
