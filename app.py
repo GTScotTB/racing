@@ -66,6 +66,11 @@ def index():
     user_role = current_user.role  # Get the role of the logged-in user
     return render_template('index.html', user=current_user, role=user_role)  # Render the home page
 
+# Route: Register
+@app.route('/register')
+def register():
+    return render_template('register.html')
+
 # Route: Add Entry (GET)
 @app.route('/add_entry', methods=['GET'])
 def show_add_entry():
