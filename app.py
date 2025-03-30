@@ -1,11 +1,12 @@
-from flask import Flask, render_template, jsonify, request, flash, redirect, url_for
+from flask import Flask, render_template, jsonify, request, flash, redirect, url_for, abort
 from config import SQLALCHEMY_DATABASE_URI, SQLALCHEMY_TRACK_MODIFICATIONS
 from models import db,User, Entry, InspectionChecklist, InspectionItem, ChecklistItem, Officials, Roles
 from sqlalchemy import or_, func, Integer, text
 import os
 from datetime import datetime
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-
+from functools import wraps
+from auth import check_password, hash_password
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -25,7 +26,6 @@ login_manager.login_view = 'login'  # Redirect to login page if not authenticate
 def load_user(user_id):
     return User.query.get(int(user_id))  # Fetch user by ID
 
-
 # Initialize SQLAlchemy with Flask
 db.init_app(app)
 
@@ -36,19 +36,31 @@ def enable_foreign_keys():
         with db.engine.connect() as connection:
             connection.execute(text("PRAGMA foreign_keys=ON"))
 
+# admin required decorator
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.role != 'Admin':
+            flash('You do not have permission to access this page.', 'danger')
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated_function
+ 
+
 # Route: Login (GET AND POST)
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
-        password = request.form['password']
+        plain_password = request.form['password']
         user = User.query.filter_by(username=username).first()
 
-        if user and user.password == password:  # Replace with hashed password check
+        if user and check_password(plain_password, user.password):  # hashed password check
             login_user(user)
             return redirect(url_for('index'))  # Redirect to the dashboard after login
         else:
-            return "Invalid credentials. Please try again.", 401
+            flash("Invalid username or password.", "danger")
+            return redirect(url_for('login'))
         
     return render_template('login.html')  # Render login form
 
@@ -73,6 +85,7 @@ def register():
 
 # Route: Add Entry (GET)
 @app.route('/add_entry', methods=['GET'])
+@login_required
 def show_add_entry():
     # Define valid classes or fetch them from your system
     classes = [
@@ -83,6 +96,7 @@ def show_add_entry():
 
 # Route: Add Entry (POST)
 @app.route('/add_entry', methods=['POST'])
+@login_required
 def add_entry():
     # Extract data from the form
     vehicle_number = request.form.get('vehicle_number')
@@ -154,6 +168,7 @@ def add_entry():
     
 # Route: Lookup Entry (GET)
 @app.route('/lookup_entry', methods=['GET'])
+@login_required
 def lookup_entry():
     search_query = request.args.get('search_query', '').strip()
 
@@ -233,6 +248,7 @@ def lookup_entry2():
 
 # Route: View Checklist (GET & POST)
 @app.route('/view_checklist', methods=['GET', 'POST'])
+@login_required
 def view_checklist():
     scrutineers = Officials.query.filter_by(role="Scrutineer").all()
 
@@ -305,6 +321,7 @@ def view_checklist():
 
 # Route: View Checklist2 (GET & POST)
 @app.route('/view_checklist2', methods=['GET', 'POST'])
+@login_required
 def view_checklist2():
     scrutineers = Officials.query.filter_by(role="Scrutineer").all()
 
@@ -386,6 +403,7 @@ def view_checklist2():
 # route: update checklist 2
 
 @app.route('/update_checklist2', methods=['POST'])
+@login_required
 def update_checklist2():
     print(request.form)  # Debug submitted form data
     try:
@@ -468,6 +486,7 @@ def update_checklist2():
                             
 # Route: Vehicle Weights
 @app.route('/vehicle_weights')
+@login_required
 def vehicle_weights():
     # Fetch vehicle weights from the database
     vehicles = db.session.query(
@@ -542,6 +561,7 @@ def outstanding_items():
 
 # Route: Garage Numbers
 @app.route('/garage_numbers')
+@login_required
 def garage_numbers():
     # Get the sorting preference from the query parameter (default is 'vehicle_number')
     order_by = request.args.get('order_by', 'vehicle_number')
@@ -578,6 +598,7 @@ def garage_numbers():
     return render_template('garage_numbers.html', vehicles=vehicles, order_by=order_by)
 # Update Checklist
 @app.route('/update_checklist', methods=['POST'])
+@login_required
 def update_checklist():
     print(request.form)  # Debug submitted form data
     try:
@@ -660,6 +681,7 @@ def update_checklist():
     
 # Route: Denied Start
 @app.route('/denied_start')
+@login_required
 def denied_start():
     # Get the sorting preference from the query parameter (default is 'vehicle_number')
     order_by = request.args.get('order_by', 'vehicle_number')
@@ -702,6 +724,7 @@ def denied_start():
 
 # Route: Not Approved to start
 @app.route('/not_approved')
+@login_required
 def not_approved():
     # Get the sorting preference from the query parameter (default is 'vehicle_number')
     order_by = request.args.get('order_by', 'vehicle_number')
@@ -738,14 +761,15 @@ def not_approved():
      .filter(InspectionItem.item_name == "Approved to Start") \
      .filter(InspectionItem.status.in_(["Pending", "NA"])) \
      .order_by(order_column).all()
-
     # Render the template and pass the data
     return render_template('not_approved.html', items=items, order_by=order_by)
 
 # Route: Denied Start Counter
 @app.route('/denied_start_count')
+@login_required
 def denied_start_count():
     # Count vehicles where "Approved to Start" is "Fail"
+
     count = db.session.query(Entry).join(InspectionChecklist, Entry.id == InspectionChecklist.entry_id) \
         .join(InspectionItem, InspectionChecklist.id == InspectionItem.checklist_id) \
         .filter(InspectionItem.item_name == "Approved to Start") \
@@ -756,6 +780,7 @@ def denied_start_count():
 
 # Route: Not Presented
 @app.route('/not_presented')
+@login_required
 def not_presented():
     # Get the sorting preference from the query parameter (default is 'vehicle_number')
     order_by = request.args.get('order_by', 'vehicle_number')
@@ -796,12 +821,14 @@ def not_presented():
 
 # Route: Print Scrut
 @app.route('/scrutineers')
+@admin_required
 def scrutineers_list():
     scrutineers = Officials.query.filter_by(role="Scrutineer").all()
     return render_template('scrutineers.html', scrutineers=scrutineers)
 
 # Route: Add Officals
 @app.route('/add_official', methods=['GET', 'POST'])
+@admin_required
 def add_official():
     if request.method == 'POST':
         # Get data from the form
@@ -838,23 +865,45 @@ def add_official():
     return render_template('add_official.html', roles=roles)
 
 # Route: Admin View/Delete Entries
+@app.route("/manage_entries")
+@admin_required
+def manage_entries():
+    raise NotImplementedError("This route is not implemented yet.")
 
 # Route: Admin View/Delete Checklists
+@app.route("/manage_checklists")
+@admin_required
+def manage_checklists():
+    raise NotImplementedError("This route is not implemented yet.")
 
 # Route: Admin View/Delete Officials
+@app.route("/manage_officials")
+@admin_required
+def manage_officials():
+    raise NotImplementedError("This route is not implemented yet.")
 
 # Route: Admin Import CSV to Entries
+@app.route('/import_entries')
+@admin_required
+def import_entries():
+    raise   NotImplementedError("This route is not implemented yet.")
 
 # Route: Admin Import CSV to Officials
+@app.route('/import_officials')
+@admin_required
+def import_officials():
+    raise NotImplementedError("This route is not implemented yet.")
 
 # Endpoint: Get total entries with vehicle_type 'W'
 @app.route('/total_entries', methods=['GET'])
+@login_required
 def total_entries():
     total = Entry.query.filter_by(vehicle_type='W').count()
     return jsonify({'total_entries': total})
 
 # Endpoint: Get total entries per class
 @app.route('/class_entries', methods=['GET'])
+@login_required
 def class_entries():
     entries = db.session.query(Entry.class_type, db.func.count(Entry.class_type)) \
                         .filter_by(vehicle_type='W') \
@@ -864,6 +913,7 @@ def class_entries():
 
 # Endpoint: Get total entries without inspection reports
 @app.route('/missing_inspections', methods=['GET'])
+@login_required
 def missing_inspections():
     # Query entries without matching checklists
     entries = Entry.query.filter(
@@ -873,6 +923,7 @@ def missing_inspections():
 
 # Endpoint: Get total entries not approved to start
 @app.route('/not_approved_to_start', methods=['GET'])
+@login_required
 def not_approved_to_start():
     try:
         # Query entries where approved_to_start is FALSE
@@ -895,6 +946,7 @@ def not_approved_to_start():
 
 # Endpoint: Get total entries with failed items
 @app.route('/failed_items', methods=['GET'])
+@login_required
 def failed_items():
     try:
         # Query entries that have at least one failed item
@@ -944,4 +996,4 @@ def failed_items():
 
 # Run the application
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)  # Enable debug mode for development
+    app.run(host='0.0.0.0', port=5000, debug=True)  # Enable debug
