@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Import Entries</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Import Entries</h1>
+    </header>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <p class="flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    <form method="POST" action="{{ url_for('import_entries') }}" enctype="multipart/form-data">
+      <label for="csv_file">Upload CSV File:</label>
+      <input type="file" name="csv_file" id="csv_file" accept=".csv" required>
+      <button type="submit">Upload CSV</button>
+    </form>
+    
+    <div class="nav-buttons">
+      <button onclick="window.location.href='/'">Home</button>
+      <button onclick="window.location.href='/manage_entries'">Manage Entries</button>
+    </div>
+  </div>
+</body>
+</html>

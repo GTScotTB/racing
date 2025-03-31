@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Checklists</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script>
+    // Confirmation for delete action.
+    function confirmDelete() {
+      return confirm('Are you sure you want to delete this checklist? This will also delete all associated inspection items.');
+    }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Manage Checklists</h1>
+  </header>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <p class="flash {{ category }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Vehicle Number</th>
+        <th>Driver Name</th>
+        <th>Approved to Start</th>
+        <th>Any Failed Items?</th>
+        <th>Any Pending Items?</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for checklist in checklists %}
+      <tr>
+        <td>{{ checklist.vehicle_number }}</td>
+        <td>{{ checklist.driver_name }}</td>
+        <td>{{ "Yes" if checklist.approved_to_start else "No" }}</td>
+        <td>{{ "Yes" if checklist.has_failed == 1 else "No" }}</td>
+        <td>{{ "Yes" if checklist.has_pending == 1 else "No" }}</td>
+        <td>
+          <!-- Each row's actions are wrapped in a form to allow deletion -->
+          <form method="POST" action="{{ url_for('manage_checklists') }}">
+            <input type="hidden" name="checklist_id" value="{{ checklist.checklist_id }}">
+            <!-- View button that directs to the view checklist route -->
+            <a href="{{ url_for('view_checklist2', checklist_id=checklist.checklist_id) }}">
+              <button type="button">View</button>
+            </a>
+            <!-- Delete button with confirmation -->
+            <button type="submit" name="action" value="delete" onclick="return confirmDelete();">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <button onclick="window.location.href='/'">Back to Home</button>
+</body>
+</html>

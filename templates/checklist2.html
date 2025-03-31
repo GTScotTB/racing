@@ -129,5 +129,9 @@
 
   <button onclick="window.location.href='/lookup_entry2'">Back to Lookup</button>
   <button onclick="window.location.href='/'">HOME</button>
+  {% if role == 'admin' %}
+  <button class="admin-button" onclick="window.location.href='/manage_checklists'">Manage Checklists</button>
+  {% else %}
+  {% endif %}
 </body>
 </html>

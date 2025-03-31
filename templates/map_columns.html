@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Map Columns</title>
+</head>
+<body>
+    <h1>Map Columns</h1>
+    <form method="POST" action="{{ url_for('preview_data') }}">
+        <!-- Pass rows as a hidden field -->
+        <input type="hidden" name="rows" value='{{ rows | tojson }}'>
+
+        {% for db_column in ['vehicle_number', 'driver_name', 'team_name', 'vehicle_make', 'vehicle_model', 'class_type', 'garage_number', 'log_book_number', 'licence_number'] %}
+            <label for="{{ db_column }}">{{ db_column }}</label>
+            <select name="{{ db_column }}" id="{{ db_column }}">
+                <option value="">-- Select CSV Column --</option>
+                {% for header in headers %}
+                    <option value="{{ header }}">{{ header }}</option>
+                {% endfor %}
+            </select>
+            <br>
+        {% endfor %}
+        <button type="submit">Next</button>
+    </form>
+</body>
+</html>

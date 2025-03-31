@@ -1,43 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Official</title>
+  <meta charset="UTF-8">
+  <title>Add Official</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  
 </head>
 <body>
-    <h1>Add Official</h1>
-    {% if error %}
-    <div style="color: red;">{{ error }}</div>
-    {% endif %}
-    <form action="/add_official" method="POST">
-        <label for="name">Name (required):</label>
-        <input type="text" id="name" name="name" required>
-        <br><br>
-
-        <label for="role">Role (required):</label>
-        <select id="role" name="role" required>
-            <option value="" disabled selected>Select Role</option>
-            {% for role in roles %}
-            <option value="{{ role.role_name }}">{{ role.role_name }}</option>
-            {% endfor %}
-        </select>
-
-        <br><br>
-
-        <label for="licence_number">Licence Number (required):</label>
-        <input type="text" id="licence_number" name="licence_number" required>
-        <br><br>
-
-        <label for="contact_info">Contact Info (optional):</label>
-        <input type="text" id="contact_info" name="contact_info">
-        <br><br>
-
-       
-        <button type="submit">Add Official</button>
+  <div class="container">
+    <header>
+      <h1>Add Official</h1>
+    </header>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    <!-- Add Official Form -->
+    <form method="POST" action="{{ url_for('add_official') }}">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" placeholder="Enter official's name" required>
+      
+      <label for="licence_number">Licence Number:</label>
+      <input type="text" id="licence_number" name="licence_number" placeholder="Enter licence number" required>
+      
+      <label for="role">Role:</label>
+      <select id="role" name="role" required>
+        {% for role in roles %}
+          <option value="{{ role.role_name }}">{{ role.role_name }}</option>
+        {% endfor %}
+      </select>
+      
+      <label for="contact_info">Contact Info:</label>
+      <input type="text" id="contact_info" name="contact_info" placeholder="Enter contact information">
+      
+      <button type="submit">Add Official</button>
     </form>
-
-    <br>
-    <button onclick="window.location.href='/superuser'">Go to Superuser Page</button>
+    
+    <div class="nav-buttons">
+      <button onclick="window.location.href='/'">Home</button>
+      <button onclick="window.location.href='/manage_officials'">Manage Officials</button>
+    </div>
+  </div>
 </body>
 </html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preview Data</title>
+</head>
+<body>
+    <h1>Preview Data</h1>
+
+    <!-- Display the data in a table -->
+    <table border="1">
+        <thead>
+            <tr>
+                {% for column in mappings.keys() %}
+                <th>{{ column }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for column, csv_column in mappings.items() %}
+                <td>{{ row[csv_column] }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <form method="POST" action="{{ url_for('import_data') }}">
+        <input type="hidden" name="rows" value='{{ rows | tojson }}'>
+        <input type="hidden" name="mappings" value='{{ mappings | tojson }}'>
+        <button type="submit">Import</button>
+    </form>
+</body>
+</html>

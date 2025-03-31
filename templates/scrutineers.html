@@ -1,31 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scrutineers List</title>
+  <meta charset="UTF-8">
+  <title>Scrutineer List</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script>
+    // Option 2: Make sure you have the following rule in your external styles.css:
+    // table th, table td {
+    //   border-bottom: 1px solid #ccc;
+    //   padding: 10px;
+    // }
+  </script>
 </head>
 <body>
-    <h1>Scrutineers Page</h1>
+  <div class="container">
+    <header>
+      <h1>Scrutineer List</h1>
+    </header>
     
-    <!-- Dropdown Menu for Scrutineers -->
-    <label for="scrutineer-dropdown">Select Scrutineer:</label>
-    <select id="scrutineer-dropdown" name="scrutineer_name">
-        <option value="" disabled selected>Select a Scrutineer</option>
-        {% for scrutineer in scrutineers %}
-        <option value="{{ scrutineer.id }}">{{ scrutineer.name }}</option>
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <p class="flash {{ category }}">{{ message }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Licence Number</th>
+          <th>Contact Info</th>
+          <th>Role</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for official in scrutineers %}
+        <tr>
+          <td>{{ official.name }}</td>
+          <td>{{ official.licence_number }}</td>
+          <td>{{ official.contact_info }}</td>
+          <td>{{ official.role }}</td>
+        </tr>
         {% endfor %}
-    </select>
+      </tbody>
+    </table>
 
-    <!-- List of Scrutineers (for reference) -->
-    <h2>List of Scrutineers</h2>
-    <ul>
-        {% for scrutineer in scrutineers %}
-        <li>
-            <strong>Name:</strong> {{ scrutineer.name }} <br>
-            <strong>Licence Number:</strong> {{ scrutineer.licence_number }}
-        </li>
-        {% endfor %}
-    </ul>
+    <div class="nav-buttons">
+      <button onclick="window.location.href='/'">Home</button>
+      <button onclick="window.location.href='/manage_officials'">Manage Officials</button>
+    </div>
+  </div>
 </body>
 </html>

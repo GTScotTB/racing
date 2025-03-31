@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Purge Database Confirmation</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Purge Database</h1>
+    </header>
+    
+    <p class="warning">
+      WARNING: This action will permanently delete all entries, checklists, and inspection items from the database. This cannot be undone.
+    </p>
+    
+    <form method="POST" action="{{ url_for('purge_database') }}">
+      <!-- The onclick attribute triggers a confirmation popup before the form is submitted. -->
+      <button type="submit" class="btn-danger" onclick="return confirm('ARE YOU SURE?!');">Confirm Purge</button>
+      <button type="button" class="btn-secondary" onclick="window.location.href='/'">Cancel</button>
+    </form>
+  </div>
+</body>
+</html>

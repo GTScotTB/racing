@@ -12,7 +12,16 @@
   <header>
     <h1>WTAC Dashboard</h1>
   </header>
-  
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+          <p class="flash {{ category }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
   <section id="dashboard">
     <h2>Dashboard Overview</h2>
     <p>Total Entries : <span id="totalEntries">Loading...</span></p>
@@ -38,9 +47,15 @@
   </section>
   {% if role == 'admin' %}
     <section id="Admin Buttons">
-    <h2>Admin Actions</h2>
-    <button class="admin-button" onclick="window.location.href='/manage_entries'">Manage Entries</button>
-    <button class="admin-button" onclick="window.location.href='/manage_checklists'">Manage Checklists</button>
+      <h2>Admin Actions</h2>
+      <button class="admin-button" onclick="window.location.href='/manage_entries'">Manage Entries</button>
+      <button class="admin-button" onclick="window.location.href='/manage_checklists'">Manage Checklists</button>
+      <button class="admin-button" onclick="window.location.href='/scrutineers'">View Scrutineers</button>
+      <button class="admin-button" onclick="window.location.href='/add_official'">Add Officals</button>
+      <button class="admin-button" onclick="window.location.href='/manage_officials'">Manage Officials</button>
+      <button class="admin-button" onclick="window.location.href='/import_entries'">Import Entries</button>
+      <h3>Database Purge</h3>
+      <button class="admin-button" onclick="window.location.href='/purge_database'">PURGE ALL</button>
     </section>
   {% else %}
   {% endif %}

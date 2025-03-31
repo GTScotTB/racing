@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Preview Data</title>
+    <style>
+        .default-value {
+            background-color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Preview Data</h1>
+
+    <form method="POST" action="{{ url_for('import_data') }}">
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Exclude</th>
+                    {% for column in ['vehicle_number', 'driver_name', 'team_name', 'vehicle_make', 'vehicle_model', 'class_type', 'log_book_number', 'licence_number', 'garage_number'] %}
+                    <th>{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr class="data-row">
+                    <!-- Exclude Checkbox -->
+                    <td>
+                        <input type="checkbox" name="exclude_{{ loop.index0 }}" value="1" {% if row.exclude == 1 %}checked{% endif %}>
+                    </td>
+                    {% for column in ['vehicle_number', 'driver_name', 'team_name', 'vehicle_make', 'vehicle_model', 'class_type', 'log_book_number', 'licence_number', 'garage_number'] %}
+                    <td class="{{ 'vehicle-make' if column == 'vehicle_make' else 'vehicle-model' if column == 'vehicle_model' else '' }}">
+                        {% if column == 'class_type' %}
+                        <select name="{{ column }}[]" class="{{ 'default-value' if row.get(mappings.get(column, ''), 'default')|lower == 'default' else '' }}">
+                            <option value="">-- Select Class --</option>
+                            {% for valid_class in valid_classes %}
+                            <option value="{{ valid_class }}" {% if row.get(mappings.get(column, ''), 'default')|lower == valid_class|lower %}selected{% endif %}>
+                                {{ valid_class }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <input type="text" name="{{ column }}[]" value="{{ row.get(mappings.get(column, ''), 'default') }}" 
+                               class="{{ 'default-value' if row.get(mappings.get(column, ''), 'default')|lower == 'default' else '' }}">
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit">Import</button>
+    </form>
+</body>
+</html>

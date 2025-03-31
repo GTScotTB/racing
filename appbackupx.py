@@ -10,7 +10,6 @@ from auth import check_password, hash_password
 import csv
 import io
 import json
-import codecs
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -1031,62 +1030,102 @@ def manage_officials():
     return render_template('manage_officials.html', officials=officials, roles_list=roles_list)
 
 # Route: Admin Import CSV to Entries
-@app.route('/import_entries', methods=['GET', 'POST'])
 
+@app.route('/import_entries', methods=['GET', 'POST'])
+@admin_required
 def import_entries():
     if request.method == 'POST':
-        print("Request Files:", request.files)  # Debugging
-        csv_file = request.files.get('csv_file')
-        if not csv_file or csv_file.filename == '':
-            flash("No file uploaded or selected.", "danger")
-            print("No file uploaded or selected.")
+        # Check if this is the mapping stage (the mapping form includes a hidden field 'csv_data')
+        if 'csv_data' in request.form:
+            # This is the mapping & import stage.
+            csv_data_json = request.form.get('csv_data')
+            try:
+                csv_rows = json.loads(csv_data_json)  # List of row dictionaries.
+            except Exception as e:
+                flash("Failed to process CSV data.", "danger")
+                return redirect(url_for('import_entries'))
+            
+            # Get mapping for each field from the form.
+            mapping = {
+                'vehicle_number': request.form.get('map_vehicle_number'),
+                'vehicle_make': request.form.get('map_vehicle_make'),
+                'driver_name': request.form.get('map_driver_name'),
+                'class_type': request.form.get('map_class_type'),
+                'vehicle_model': request.form.get('map_vehicle_model'),
+                'garage_number': request.form.get('map_garage_number'),
+                'log_book_number': request.form.get('map_log_book_number')
+            }
+            
+            # Ensure required field mappings are provided.
+            for field in ['vehicle_number', 'vehicle_make', 'driver_name', 'class_type']:
+                if not mapping[field]:
+                    flash(f"Mapping for {field} is required.", "danger")
+                    return redirect(url_for('import_entries'))
+            
+            imported_count = 0
+            for row in csv_rows:
+                # For required fields, get a stripped value.
+                vn = row.get(mapping['vehicle_number'], "").strip()
+                vm = row.get(mapping['vehicle_make'], "").strip()
+                dn = row.get(mapping['driver_name'], "").strip()
+                ct = row.get(mapping['class_type'], "").strip()
+                
+                # Skip the row if any required field is empty.
+                if not (vn and vm and dn and ct):
+                    continue
+                # Duplicate check: if an entry with the same vehicle_number already exists, skip this row.
+                existing = Entry.query.filter_by(vehicle_number=vn).first()
+                if existing:
+                    continue  # Skip importing this row if it's a duplicate.
+
+                # For optional fields, get values if mapped.
+                vmdl = row.get(mapping['vehicle_model'], "").strip() if mapping['vehicle_model'] else ""
+                gn = row.get(mapping['garage_number'], "").strip() if mapping['garage_number'] else None
+                lb = row.get(mapping['log_book_number'], "").strip() if mapping['log_book_number'] else None
+                
+                new_entry = Entry(
+                    vehicle_number=vn,
+                    vehicle_make=vm,
+                    driver_name=dn,
+                    class_type=ct.replace(' ', '_').lower(),
+                    vehicle_model=vmdl,
+                    garage_number=gn,
+                    log_book_number=lb,
+                    vehicle_type='W'  # All entries imported will have vehicle_type 'W'
+                )
+                db.session.add(new_entry)
+                imported_count += 1
+            try:
+                db.session.commit()
+                flash(f"Successfully imported {imported_count} entries.", "success")
+            except Exception as e:
+                db.session.rollback()
+                flash("Failed to import entries from CSV.", "danger")
             return redirect(url_for('import_entries'))
-
-        print(f"Received file: {csv_file.filename}")
-        if not csv_file.filename.endswith('.csv'):
-            flash("Invalid file type. Please upload a CSV file.", "danger")
-            print("Invalid file type.")
-            return redirect(url_for('import_entries'))
-
-        print(f"File Content Type: {csv_file.content_type}")
-        try:
-            # Read the CSV file and handle BOM
-            raw_content = csv_file.stream.read().decode("utf-8-sig", errors="ignore")
-            print("Raw CSV Content (first 500 chars):", raw_content[:500])  # Debugging raw content
-
-            stream = io.StringIO(raw_content, newline=None)
+        else:
+            # This is the CSV file upload stage.
+            csv_file = request.files.get('csv_file')
+            if not csv_file:
+                flash("No CSV file uploaded.", "danger")
+                return redirect(url_for('import_entries'))
+            try:
+                # Read CSV file stream as UTF8.
+                stream = io.StringIO(csv_file.stream.read().decode("utf-8"), newline=None)
+            except Exception as e:
+                flash("Failed to read CSV file.", "danger")
+                return redirect(url_for('import_entries'))
             csv_reader = csv.DictReader(stream)
-
-            # Validate headers
-            headers = csv_reader.fieldnames
-            if not headers or None in headers:
-                flash("CSV file appears to be missing or invalid headers.", "danger")
-                print("Invalid headers:", headers)
+            headers = csv_reader.fieldnames  # List of column headers.
+            if not headers:
+                flash("CSV file has no headers.", "danger")
                 return redirect(url_for('import_entries'))
-            print("Headers:", headers)  # Debugging
-
-            # Parse rows into a list of dictionaries
-            csv_rows = []
-            for i, row in enumerate(csv_reader):
-                print(f"Row {i}: {row}")  # Debugging each row
-                csv_rows.append(row)
-
-            print(f"Total rows read: {len(csv_rows)}")  # Debugging total rows
-
-            if not csv_rows:
-                flash("No rows found in the CSV file.", "danger")
-                print("No rows found.")
-                return redirect(url_for('import_entries'))
-
-            # Redirect to mapping page
-            return render_template('import_entries_mapping.html', headers=headers, csv_data=csv_rows)
-
-        except Exception as e:
-            flash(f"Failed to process CSV file: {e}", "danger")
-            print(f"Error processing CSV file: {e}")
-            return redirect(url_for('import_entries'))
-
-    # GET Request: Render upload form
+            rows = list(csv_reader)  # All rows as a list of dictionaries.
+            # Convert the CSV rows to JSON so we can carry them to the mapping form.
+            csv_data_json = json.dumps(rows)
+            # Render the mapping form, passing the CSV headers and data.
+            return render_template('import_entries_mapping.html', headers=headers, csv_data=csv_data_json)
+    
+    # For GET requests, simply render the CSV file upload form.
     return render_template('import_entries.html')
 
 # Route: Admin Import CSV to Officials

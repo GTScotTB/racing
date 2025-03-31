@@ -79,3 +79,11 @@ body {
   ul li {
     margin: 0.3rem 0;
   }
+
+table th,
+table td,
+table tr {
+  border-bottom: 1px solid #ccc;
+  border-right: 1px solid #ccc;
+  padding: 10px;
+}
