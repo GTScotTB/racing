@@ -49,25 +49,47 @@ def upload_csv():
 
     return render_template('upload.html')
 
+def split_vehicle(vehicle_string):
+    """Split vehicle string into make and model."""
+    parts = vehicle_string.split(' ', 1)
+    if len(parts) > 1:
+        return parts[0], parts[1]
+    return parts[0], ''
+
 @app.route('/preview_data', methods=['POST'])
 def preview_data():
     # Get mapped columns
     mappings = {key: request.form[key] for key in request.form if key != 'rows'}
-    print("Mappings:", mappings)  # Debugging
+    print("Mappings:", mappings)  # Debug print
 
     # Get rows from the hidden field
     rows = request.form.get('rows', '[]')
-    print("Raw Rows:", rows)  # Debugging
-
     try:
         rows = json.loads(rows)
-        print("Parsed Rows:", rows[:5])  # Debugging (print first 5 rows)
     except json.JSONDecodeError as e:
         print("Error decoding rows JSON:", e)
         rows = []
 
-    # Normalize class_type values and mark "drift" rows as excluded
-    valid_classes = ['tuner', 'clubsprint', 'open', 'pro open', 'pro am', 'pro', 'flying 500', 'demo', 'default']
+    # Define valid classes and their mappings
+    class_type_mapping = {
+        'proam': 'Pro Am',
+        'pro am': 'Pro Am',
+        'flying500': 'Flying 500',
+        'flying 500': 'Flying 500',
+        'proopen': 'Pro Open',
+        'pro open': 'Pro Open',
+        'demonstration': 'Demo',
+        'demo': 'Demo',
+        'clubsprint': 'Clubsprint',
+        'tuner': 'Tuner',
+        'open': 'Open',
+        'pro': 'Pro',
+        'drift': 'Drift'
+    }
+
+    # Define valid classes list
+    valid_classes = sorted(set(class_type_mapping.values()))
+
     class_type_suffix = {
         'clubsprint': 'C',
         'open': 'O',
@@ -76,100 +98,120 @@ def preview_data():
         'pro am': 'PA',
         'pro open': 'PO',
         'demo': 'D',
-        'flying 500': 'F',
-        'default': ''  # No suffix for default
+        'flying 500': 'F'
     }
 
-    for index, row in enumerate(rows):
-        # Debugging: Print the row and check if 'vehicle_number' exists
-        print(f"Processing row {index}: {row}")
-        if mappings.get('vehicle_number', '') not in row:
-            print(f"Row {index} is missing 'vehicle_number': {row}")
-            row['vehicle_number'] = ''  # Set a default value to avoid KeyError
+    # Initialize default values for new fields
+    for row in rows:
+        # Store original vehicle value if it exists
+        if mappings.get('vehicle') in row:
+            print(f"Original vehicle value: {row[mappings['vehicle']]}")  # Debug print
+            row['original_vehicle'] = row[mappings['vehicle']]
+            
+        # Get values from mapped columns with defaults
+        vehicle_column = mappings.get('vehicle', '')
+        if vehicle_column in row:
+            make, model = split_vehicle(row[vehicle_column])
+            row['vehicle_make'] = make
+            row['vehicle_model'] = model
+            print(f"Split vehicle: {make} | {model}")  # Debug print
+        else:
+            # If no vehicle column mapped, try individual make/model columns
+            row['vehicle_make'] = row.get(mappings.get('vehicle_make', ''), '')
+            row['vehicle_model'] = row.get(mappings.get('vehicle_model', ''), '')
 
-        # Get the original class_type value
-        class_type = row.get(mappings.get('class_type', ''), '').lower()
-        vehicle_number = row.get(mappings.get('vehicle_number', ''), '').lower()
+        # Initialize class_type from mapping or set default
+        class_type_column = mappings.get('class_type', '')
+        row['class_type'] = row.get(class_type_column, '').lower() if class_type_column else ''
+        row['vehicle_number'] = row.get(mappings.get('vehicle_number', ''), '')
 
-        # Mark rows with "drift" as excluded by default
-        if class_type == 'drift':
-            row['exclude'] = 1  # Mark as excluded
-        elif vehicle_number == 'null':
-            row['exclude'] = 1
-        elif vehicle_number == '0':
+    for row in rows:
+        # Normalize class type
+        original_class = row['class_type'].lower().strip()
+        row['class_type'] = class_type_mapping.get(original_class, 'Default')
+        
+        # Mark excluded rows
+        if original_class == 'drift' or row['vehicle_number'].lower() in ['null', '0', '']:
             row['exclude'] = 1
         else:
-            row['exclude'] = 0  # Not excluded by default
+            row['exclude'] = 0
 
-        # Normalize class_type values
-        if class_type == 'proam':
-            row['class_type'] = 'Pro Am'
-        elif class_type == 'flying500':
-            row['class_type'] = 'Flying 500'
-        elif class_type == 'proopen':
-            row['class_type'] = 'Pro Open'
-        elif class_type == 'demonstration':
-            row['class_type'] = 'Demo'
-        elif class_type not in valid_classes:
-            row['class_type'] = 'Default'
+        # Add suffix to vehicle number based on normalized class
+        if row['vehicle_number'] and row['class_type'].lower() in class_type_suffix:
+            suffix = class_type_suffix[row['class_type'].lower()]
+            if not row['vehicle_number'].endswith(suffix):
+                row['vehicle_number'] = f"{row['vehicle_number']}{suffix}"
 
-        # Append class_type suffix to vehicle_number
-        normalized_class_type = row.get('class_type', 'default').lower()
-        suffix = class_type_suffix.get(normalized_class_type, '')
-        if suffix:
-            row['vehicle_number'] = f"{row['vehicle_number']}{suffix}"
-
-    # Render the preview page
-    return render_template('preview_data.html', mappings=mappings, rows=rows, valid_classes=valid_classes)
+    return render_template('preview_data.html', 
+                         mappings=mappings, 
+                         rows=rows, 
+                         valid_classes=valid_classes)
 
 
 @app.route('/import_data', methods=['POST'])
 def import_data():
-    # Get data from the form
-    data = request.form.to_dict(flat=False)
+    try:
+        data = request.form.to_dict(flat=False)
+        print("Submitted data:", data)  # Debug print
+        
+        # Get the number of rows from vehicle_number field
+        num_rows = len(data.get('vehicle_number[]', []))
+        print(f"Number of rows to process: {num_rows}")  # Debug print
+        
+        rows_to_import = []
+        for i in range(num_rows):
+            # Skip if row is marked as excluded
+            exclude_key = f"exclude_{i}"
+            if exclude_key in data and data[exclude_key][0] == '1':
+                print(f"Skipping row {i} - marked as excluded")  # Debug print
+                continue
+            
+            # Create row dictionary
+            row = {}
+            for field in ['vehicle_number', 'vehicle_make', 'vehicle_model', 
+                         'driver_name', 'team_name', 'class_type', 
+                         'log_book_number', 'licence_number', 'garage_number']:
+                field_key = f"{field}[]"
+                if field_key in data and i < len(data[field_key]):
+                    value = data[field_key][i]
+                    row[field] = '' if value.lower() == 'default' else value
+                else:
+                    row[field] = ''
+            
+            print(f"Processing row {i}:", row)  # Debug print
+            rows_to_import.append(row)
 
-    # Debugging: Print submitted data
-    print("Submitted data:", data)
+        # Insert data into the database
+        print(f"Attempting to import {len(rows_to_import)} rows")  # Debug print
+        for row in rows_to_import:
+            try:
+                entry = Entry(
+                    vehicle_number=row['vehicle_number'],
+                    vehicle_make=row['vehicle_make'],
+                    vehicle_model=row['vehicle_model'],
+                    driver_name=row['driver_name'],
+                    team_name=row['team_name'],
+                    class_type=row['class_type'],
+                    log_book_number=row['log_book_number'],
+                    licence_number=row['licence_number'],
+                    garage_number=row['garage_number']
+                )
+                db.session.add(entry)
+                print(f"Added entry: {row['vehicle_number']}")  # Debug print
+            except Exception as e:
+                print(f"Error adding row {row['vehicle_number']}: {str(e)}")  # Debug print
+                raise
 
-    # Filter out rows marked as excluded
-    rows_to_import = []
-    vehicle_numbers = data.get('vehicle_number', [])
-    for i in range(len(vehicle_numbers)):
-        exclude_key = f"exclude_{i}"
-        if exclude_key in data and data[exclude_key][0] == '1':
-            continue  # Skip this row if the exclude checkbox is checked
-
-        # Add the row to the list of rows to import, replacing 'default' with ''
-        rows_to_import.append({
-            'vehicle_number': vehicle_numbers[i] if vehicle_numbers[i] != 'default' else '',
-            'vehicle_make': data.get('vehicle_make', [])[i] if data.get('vehicle_make', [])[i] != 'default' else '',
-            'vehicle_model': data.get('vehicle_model', [])[i] if data.get('vehicle_model', [])[i] != 'default' else '',
-            'driver_name': data.get('driver_name', [])[i] if data.get('driver_name', [])[i] != 'default' else '',
-            'team_name': data.get('team_name', [])[i] if data.get('team_name', [])[i] != 'default' else '',
-            'class_type': data.get('class_type', [])[i] if data.get('class_type', [])[i] != 'default' else '',
-            'log_book_number': data.get('log_book_number', [])[i] if data.get('log_book_number', [])[i] != 'default' else '',
-            'licence_number': data.get('licence_number', [])[i] if data.get('licence_number', [])[i] != 'default' else '',
-            'garage_number': data.get('garage_number', [])[i] if data.get('garage_number', [])[i] != 'default' else '',
-        })
-
-    # Insert data into the database
-    for row in rows_to_import:
-        entry = Entry(
-            vehicle_number=row['vehicle_number'],
-            vehicle_make=row['vehicle_make'],
-            vehicle_model=row['vehicle_model'],  # Include vehicle_model
-            driver_name=row['driver_name'],
-            team_name=row['team_name'],  # Include team_name
-            class_type=row['class_type'],
-            log_book_number=row['log_book_number'],
-            licence_number=row['licence_number'],
-            garage_number=row['garage_number']
-        )
-        db.session.add(entry)
-
-    db.session.commit()
-    flash("Data imported successfully!", "success")
-    return redirect(url_for('index'))
+        db.session.commit()
+        print("Database commit successful")  # Debug print
+        flash("Data imported successfully!", "success")
+        return redirect(url_for('index'))
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error during import: {str(e)}")  # Debug print
+        flash(f"Error importing data: {str(e)}", "danger")
+        return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
