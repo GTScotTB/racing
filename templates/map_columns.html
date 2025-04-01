@@ -2,25 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Map Columns</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map CSV Columns</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .mapping-group {
+            margin-bottom: 1rem;
+        }
+        .mapping-group label {
+            display: inline-block;
+            width: 150px;
+            margin-right: 1rem;
+        }
+        select {
+            padding: 0.3rem;
+            min-width: 200px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Map Columns</h1>
-    <form method="POST" action="{{ url_for('preview_data') }}">
-        <!-- Pass rows as a hidden field -->
-        <input type="hidden" name="rows" value='{{ rows | tojson }}'>
+    <header>
+        <h1>Map CSV Columns</h1>
+    </header>
 
-        {% for db_column in ['vehicle_number', 'driver_name', 'team_name', 'vehicle_make', 'vehicle_model', 'class_type', 'garage_number', 'log_book_number', 'licence_number'] %}
-            <label for="{{ db_column }}">{{ db_column }}</label>
-            <select name="{{ db_column }}" id="{{ db_column }}">
-                <option value="">-- Select CSV Column --</option>
-                {% for header in headers %}
-                    <option value="{{ header }}">{{ header }}</option>
+    <section>
+        <h2>Map CSV Columns to Database Fields</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
                 {% endfor %}
-            </select>
-            <br>
-        {% endfor %}
-        <button type="submit">Next</button>
-    </form>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('map_columns') }}">
+            <input type="hidden" name="raw_csv_data" value="{{ raw_csv_data }}">
+            <input type="hidden" name="raw_csv_headers" value="{{ raw_csv_headers }}">
+            
+            {% for db_field in db_fields %}
+            <div class="mapping-group">
+                <label for="{{ db_field }}">{{ db_field.replace('_', ' ').title() }}:</label>
+                <select name="mapping[{{ db_field }}]" id="{{ db_field }}">
+                    <option value="">-- Select Column --</option>
+                    {% for header in csv_headers %}
+                    <option value="{{ header }}">{{ header }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endfor %}
+
+            <div class="button-group">
+                <button type="submit">Preview Data</button>
+                <button type="button" onclick="window.location.href='{{ url_for('import_entries') }}'">Back</button>
+            </div>
+        </form>
+    </section>
 </body>
 </html>

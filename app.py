@@ -1032,62 +1032,249 @@ def manage_officials():
 
 # Route: Admin Import CSV to Entries
 @app.route('/import_entries', methods=['GET', 'POST'])
-
 def import_entries():
     if request.method == 'POST':
-        print("Request Files:", request.files)  # Debugging
+        print("Request Files:", request.files)  # Debug
         csv_file = request.files.get('csv_file')
+        
         if not csv_file or csv_file.filename == '':
-            flash("No file uploaded or selected.", "danger")
-            print("No file uploaded or selected.")
+            flash("No file uploaded", "danger")
+            print("No file selected")  # Debug
             return redirect(url_for('import_entries'))
-
-        print(f"Received file: {csv_file.filename}")
+            
         if not csv_file.filename.endswith('.csv'):
-            flash("Invalid file type. Please upload a CSV file.", "danger")
-            print("Invalid file type.")
+            flash("Please upload a CSV file", "danger")
+            print("Invalid file type")  # Debug
             return redirect(url_for('import_entries'))
-
-        print(f"File Content Type: {csv_file.content_type}")
+            
         try:
-            # Read the CSV file and handle BOM
-            raw_content = csv_file.stream.read().decode("utf-8-sig", errors="ignore")
-            print("Raw CSV Content (first 500 chars):", raw_content[:500])  # Debugging raw content
-
-            stream = io.StringIO(raw_content, newline=None)
-            csv_reader = csv.DictReader(stream)
-
-            # Validate headers
-            headers = csv_reader.fieldnames
-            if not headers or None in headers:
-                flash("CSV file appears to be missing or invalid headers.", "danger")
-                print("Invalid headers:", headers)
-                return redirect(url_for('import_entries'))
-            print("Headers:", headers)  # Debugging
-
-            # Parse rows into a list of dictionaries
-            csv_rows = []
-            for i, row in enumerate(csv_reader):
-                print(f"Row {i}: {row}")  # Debugging each row
-                csv_rows.append(row)
-
-            print(f"Total rows read: {len(csv_rows)}")  # Debugging total rows
-
-            if not csv_rows:
-                flash("No rows found in the CSV file.", "danger")
-                print("No rows found.")
-                return redirect(url_for('import_entries'))
-
-            # Redirect to mapping page
-            return render_template('import_entries_mapping.html', headers=headers, csv_data=csv_rows)
-
+            # Read CSV with UTF-8-SIG to handle BOM
+            content = csv_file.stream.read().decode('utf-8-sig')
+            print("Raw content (first 500 chars):", content[:500])  # Debug
+            
+            # Get CSV headers and data
+            csv_reader = csv.reader(io.StringIO(content))
+            headers = next(csv_reader)  # Get headers
+            csv_data = list(csv_reader)  # Get all rows
+            
+            print("CSV Headers:", headers)  # Debug
+            print(f"Rows read: {len(csv_data)}")  # Debug
+            
+            # Define the database columns we want to map
+            db_columns = [
+                'vehicle_number',
+                'driver_name',
+                'vehicle_make',
+                'vehicle_model',
+                'class_type',
+                'team_name',
+                'garage_number',
+                'log_book_number',
+                'licence_number'
+            ]
+            
+            # Convert data to JSON-safe format
+            json_safe_data = []
+            for row in csv_data:
+                json_safe_data.append([str(cell) for cell in row])
+            
+            return render_template(
+                'mapping.html',
+                csv_headers=headers,
+                db_columns=db_columns,
+                csv_data=json_safe_data
+            )
+            
         except Exception as e:
-            flash(f"Failed to process CSV file: {e}", "danger")
-            print(f"Error processing CSV file: {e}")
+            flash(f"Error processing file: {str(e)}", "danger")
+            print(f"Error: {str(e)}")  # Debug
             return redirect(url_for('import_entries'))
+            
+    return render_template('import.html')
 
-    # GET Request: Render upload form
-    return render_template('import_entries.html')
+@app.route('/preview_data', methods=['POST'])
+def preview_data():
+    try:
+        print("Form data received:", request.form)  # Debug
+        
+        # Get raw CSV data and headers
+        raw_csv_data = json.loads(request.form.get('raw_csv_data'))
+        raw_csv_headers = json.loads(request.form.get('raw_csv_headers'))
+        
+        # Get mappings
+        mappings = {}
+        for key, value in request.form.items():
+            if key.startswith('mapping['):
+                db_field = key[8:-1]  # Remove 'mapping[' and ']'
+                mappings[db_field] = value if value else ''
+        
+        # Valid classes list - now including "Blank"
+        valid_classes = ['Tuner', 'Clubsprint', 'Open', 'Pro Open', 'Pro Am', 
+                        'Pro', 'Flying 500', 'Demo', 'Blank']
+        
+        # Process rows
+        processed_rows = []
+        for row_data in raw_csv_data:
+            # Create a dictionary from the row using headers
+            row = dict(zip(raw_csv_headers, row_data))
+            
+            processed_row = {}
+            
+            # Map CSV columns to database fields
+            for db_col, csv_col in mappings.items():
+                if csv_col:  # Only map if a column was selected
+                    processed_row[db_col] = row.get(csv_col, '')
+                else:
+                    processed_row[db_col] = ''
+
+            # Set default vehicle type
+            processed_row['vehicle_type'] = 'W'
+
+            # Normalize class type
+            class_type = processed_row.get('class_type', '').lower()
+            class_mapping = {
+                'proam': 'Pro Am',
+                'proopen': 'Pro Open',
+                'demonstration': 'Demo',
+                'flying500': 'Flying 500',
+                'drift': 'Blank',  # Map drift to Blank
+                '': 'Blank'  # Map empty to Blank
+            }
+            
+            # Get normalized class or title case the existing value
+            normalized_class = class_mapping.get(class_type, class_type.title())
+            
+            # If normalized class isn't in valid_classes or is Blank, set to "Blank" and mark for exclusion
+            if normalized_class not in valid_classes or normalized_class == 'Blank':
+                processed_row['class_type'] = 'Blank'
+                processed_row['should_exclude'] = True  # Mark for exclusion
+            else:
+                processed_row['class_type'] = normalized_class
+                processed_row['should_exclude'] = False
+
+            # Add class suffix to vehicle number if numeric
+            if processed_row.get('vehicle_number', '').isdigit():
+                suffix_mapping = {
+                    'Tuner': 'T',
+                    'Clubsprint': 'C',
+                    'Open': 'O',
+                    'Pro Open': 'PO',
+                    'Pro Am': 'PA',
+                    'Pro': 'P',
+                    'Flying 500': 'F',
+                    'Demo': 'D',
+                    'Blank': ''  # No suffix for Blank class
+                }
+                suffix = suffix_mapping.get(processed_row['class_type'], '')
+                if suffix:
+                    processed_row['vehicle_number'] = f"{processed_row['vehicle_number']}{suffix}"
+
+            processed_rows.append(processed_row)
+
+        print(f"Processed {len(processed_rows)} rows")  # Debug
+
+        return render_template('preview_data.html',
+                             rows=processed_rows,
+                             valid_classes=valid_classes)
+
+    except Exception as e:
+        print(f"Error in preview_data: {str(e)}")  # Debug
+        print(f"Request form data: {request.form}")  # Debug
+        flash(f"Error processing data: {str(e)}", "danger")
+        return redirect(url_for('import_entries'))
+
+@app.route('/import_data', methods=['POST'])
+def import_data():
+    try:
+        print("Starting data import...")  # Debug
+        
+        # Get all form data
+        form_data = request.form.to_dict(flat=False)  # Get as multidict to handle arrays
+        
+        # Get the number of entries based on vehicle numbers length
+        num_entries = len(form_data.get('vehicle_number[]', []))
+        print(f"Number of entries to process: {num_entries}")  # Debug
+        
+        # Track duplicates for reporting
+        duplicates = []
+        imported = []
+        
+        # Get existing vehicle numbers
+        existing_numbers = {
+            number[0] for number in 
+            db.session.query(Entry.vehicle_number).all()
+        }
+        
+        # Process each entry
+        entries = []
+        for i in range(num_entries):
+            # Skip if this row is marked for exclusion
+            if form_data.get('exclude[]', []):
+                if len(form_data['exclude[]']) > i and form_data['exclude[]'][i] == 'true':
+                    print(f"Skipping excluded row {i}")  # Debug
+                    continue
+            
+            vehicle_number = form_data['vehicle_number[]'][i] if i < len(form_data['vehicle_number[]']) else ''
+            
+            # Skip entries with no vehicle number or marked as NULL
+            if not vehicle_number or vehicle_number == 'NULL':
+                print(f"Skipping entry with no vehicle number")  # Debug
+                continue
+            
+            # Check for duplicates both in database and current import
+            if vehicle_number in existing_numbers:
+                print(f"Duplicate vehicle number found in database: {vehicle_number}")  # Debug
+                duplicates.append(vehicle_number)
+                continue
+                
+            entry = Entry(
+                vehicle_number=vehicle_number,
+                driver_name=form_data['driver_name[]'][i] if i < len(form_data['driver_name[]']) else '',
+                vehicle_make=form_data['vehicle_make[]'][i] if i < len(form_data['vehicle_make[]']) else '',
+                vehicle_model=form_data['vehicle_model[]'][i] if i < len(form_data['vehicle_model[]']) else '',
+                class_type=form_data['class_type[]'][i] if i < len(form_data['class_type[]']) else '',
+                team_name=form_data['team_name[]'][i] if i < len(form_data['team_name[]']) else '',
+                garage_number=form_data['garage_number[]'][i] if i < len(form_data['garage_number[]']) else '',
+                log_book_number=form_data['log_book_number[]'][i] if i < len(form_data['log_book_number[]']) else '',
+                licence_number=form_data['licence_number[]'][i] if i < len(form_data['licence_number[]']) else '',
+                vehicle_type='W'  # Default value
+            )
+            
+            entries.append(entry)
+            imported.append(vehicle_number)
+            # Add to existing numbers to catch duplicates within current import
+            existing_numbers.add(vehicle_number)
+        
+        print(f"Processed {len(entries)} valid entries")  # Debug
+        
+        try:
+            # Add all entries to the session
+            for entry in entries:
+                db.session.add(entry)
+            
+            # Commit the transaction
+            db.session.commit()
+            
+            # Create appropriate flash messages
+            if imported:
+                flash(f"Successfully imported {len(imported)} entries", "success")
+            if duplicates:
+                flash(f"Skipped {len(duplicates)} duplicate entries: {', '.join(duplicates)}", "warning")
+            if not imported and duplicates:
+                flash("No new entries were imported - all were duplicates", "warning")
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Database error: {str(e)}")  # Debug
+            flash(f"Error importing data: {str(e)}", "danger")
+            
+        return redirect(url_for('manage_entries'))
+        
+    except Exception as e:
+        print(f"Error in import_data: {str(e)}")  # Debug
+        print(f"Form data: {request.form}")  # Debug
+        flash(f"Error importing data: {str(e)}", "danger")
+        return redirect(url_for('import_entries'))
 
 # Route: Admin Import CSV to Officials
 @app.route('/import_officials')

@@ -2,153 +2,122 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Preview Data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Import Data</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
-        .default-value {
-            background-color: red;
+        .excluded {
+            opacity: 0.5;
+            background-color: #f8f8f8;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 4px;
+            box-sizing: border-box;
         }
     </style>
 </head>
 <body>
-    <h1>Preview Data</h1>
-    
-    <!-- Add toggle button with state indicator -->
-    <div style="margin-bottom: 20px;">
-        <button id="vehicleToggle" onclick="toggleVehicleHandling()">
-            Vehicle Handling: Split Mode
-        </button>
-    </div>
+    <header>
+        <h1>Preview Import Data</h1>
+    </header>
 
-    <form method="POST" action="{{ url_for('import_data') }}">
-        <table border="1">
-            <thead>
-                <tr>
-                    <th>Exclude</th>
-                    {% for column in ['vehicle_number', 'driver_name', 'team_name', 'vehicle_make', 'vehicle_model', 'class_type', 'log_book_number', 'licence_number', 'garage_number'] %}
-                    <th>{{ column }}</th>
+    <section>
+        <h2>Review Data Before Import</h2>
+        
+        <button type="button" onclick="toggleMakeModel()">Toggle Make/Model Split</button>
+        
+        <form method="POST" action="{{ url_for('import_data') }}">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vehicle #</th>
+                        <th>Driver</th>
+                        <th>Make</th>
+                        <th>Model</th>
+                        <th>Class</th>
+                        <th>Team</th>
+                        <th>Garage</th>
+                        <th>Exclude</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr class="{% if row.should_exclude %}excluded{% endif %}">
+                        <td><input type="text" name="vehicle_number[]" value="{{ row.get('vehicle_number', '') }}"></td>
+                        <td><input type="text" name="driver_name[]" value="{{ row.get('driver_name', '') }}"></td>
+                        <td><input type="text" name="vehicle_make[]" value="{{ row.get('vehicle_make', '') }}" 
+                                 data-original-value="{{ row.get('vehicle_make', '') }}"></td>
+                        <td><input type="text" name="vehicle_model[]" value="{{ row.get('vehicle_model', '') }}"
+                                 data-original-value="{{ row.get('vehicle_model', '') }}"></td>
+                        <td>
+                            <select name="class_type[]">
+                                {% for class_type in valid_classes %}
+                                <option value="{{ class_type }}" {% if class_type == row.get('class_type', '') %}selected{% endif %}>
+                                    {{ class_type }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input type="text" name="team_name[]" value="{{ row.get('team_name', '') }}"></td>
+                        <td><input type="text" name="garage_number[]" value="{{ row.get('garage_number', '') }}"></td>
+                        <td>
+                            <input type="checkbox" name="exclude[]" value="true" 
+                                   {% if row.should_exclude %}checked{% endif %}>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in rows %}
-                <tr class="data-row">
-                    <td>
-                        <input type="checkbox" name="exclude_{{ loop.index0 }}" value="1" {% if row.exclude == 1 %}checked{% endif %}>
-                    </td>
-                    <td><input type="text" name="vehicle_number[]" value="{{ row.vehicle_number }}"></td>
-                    <td><input type="text" name="driver_name[]" value="{{ row.get(mappings.get('driver_name', ''), '') }}"></td>
-                    <td><input type="text" name="team_name[]" value="{{ row.get(mappings.get('team_name', ''), '') }}"></td>
-                    <td>
-                        <input type="text" name="vehicle_make[]" value="{{ row.vehicle_make }}" 
-                               data-original-make="{{ row.vehicle_make }}"
-                               data-original-vehicle="{{ row.original_vehicle if row.original_vehicle is defined else '' }}">
-                    </td>
-                    <td>
-                        <input type="text" name="vehicle_model[]" value="{{ row.vehicle_model }}"
-                               data-original-model="{{ row.vehicle_model }}">
-                    </td>
-                    <td>
-                        <select name="class_type[]">
-                            <option value="">-- Select Class --</option>
-                            {% for valid_class in valid_classes %}
-                            <option value="{{ valid_class }}" {% if row.class_type == valid_class %}selected{% endif %}>
-                                {{ valid_class }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td><input type="text" name="log_book_number[]" value="{{ row.get(mappings.get('log_book_number', ''), '') }}"></td>
-                    <td><input type="text" name="licence_number[]" value="{{ row.get(mappings.get('licence_number', ''), '') }}"></td>
-                    <td><input type="text" name="garage_number[]" value="{{ row.get(mappings.get('garage_number', ''), '') }}"></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <button type="submit">Import</button>
-    </form>
+                </tbody>
+            </table>
+            
+            <div class="button-group">
+                <button type="submit">Import Data</button>
+                <button type="button" onclick="window.location.href='{{ url_for('import_entries') }}'">Back</button>
+            </div>
+        </form>
+    </section>
 
     <script>
-    let isCombined = false;
-    
-    function toggleVehicleHandling() {
-        isCombined = !isCombined;
-        const button = document.getElementById('vehicleToggle');
-        button.textContent = `Vehicle Handling: ${isCombined ? 'Combined Mode' : 'Split Mode'}`;
-        
-        const rows = document.querySelectorAll('.data-row');
-        
-        rows.forEach((row, index) => {
-            const makeInput = row.querySelector('input[name="vehicle_make[]"]');
-            const modelInput = row.querySelector('input[name="vehicle_model[]"]');
-            const originalVehicle = makeInput.getAttribute('data-original-vehicle');
+        function toggleMakeModel() {
+            const rows = document.querySelectorAll('tbody tr');
+            const button = document.querySelector('button');
             
-            console.log(`Row ${index}:`, {
-                originalVehicle,
-                currentMake: makeInput.value,
-                currentModel: modelInput.value
-            });
-
-            if (isCombined && originalVehicle) {
-                console.log(`Splitting vehicle: ${originalVehicle}`);
-                const parts = originalVehicle.split(' ');
-                const make = parts[0];
-                const model = parts.slice(1).join(' ');
+            rows.forEach(row => {
+                const makeInput = row.querySelector('input[name="vehicle_make[]"]');
+                const modelInput = row.querySelector('input[name="vehicle_model[]"]');
                 
-                console.log(`Split result - Make: ${make}, Model: ${model}`);
-                makeInput.value = make;
-                modelInput.value = model;
-            } else {
-                console.log('Restoring original values');
-                makeInput.value = makeInput.getAttribute('data-original-make') || '';
-                modelInput.value = modelInput.getAttribute('data-original-model') || '';
-            }
-        });
-    }
-
-    // Debug logging on page load
-    window.onload = function() {
-        console.log('Initial data:');
-        console.log('Mappings:', {{ mappings|tojson|safe }});
-        console.log('Rows:', {{ rows|tojson|safe }});
-        
-        const rows = document.querySelectorAll('.data-row');
-        rows.forEach((row, index) => {
-            const makeInput = row.querySelector('input[name="vehicle_make[]"]');
-            console.log(`Row ${index} original vehicle:`, makeInput.getAttribute('data-original-vehicle'));
-        });
-
-        // Store original values when page loads
-        rows.forEach(row => {
-            const makeInput = row.querySelector('input[name="vehicle_make[]"]');
-            const modelInput = row.querySelector('input[name="vehicle_model[]"]');
-            makeInput.setAttribute('data-original-vehicle', makeInput.value);
-            modelInput.setAttribute('data-original-model', modelInput.value);
-        });
-    };
-
-    document.getElementById('toggleSplit').onclick = function() {
-        const rows = document.querySelectorAll('.data-row');
-        rows.forEach(row => {
-            const makeInput = row.querySelector('input[name="vehicle_make[]"]');
-            const modelInput = row.querySelector('input[name="vehicle_model[]"]');
-            
-            if (this.textContent === 'Split Make/Model') {
-                // Split the make/model
-                const fullVehicle = makeInput.value;
-                const parts = fullVehicle.split(' ');
-                if (parts.length > 1) {
-                    makeInput.value = parts[0];
-                    modelInput.value = parts.slice(1).join(' ');
+                if (button.textContent === 'Toggle Make/Model Split') {
+                    // Split mode
+                    const combined = makeInput.value + ' ' + modelInput.value;
+                    const parts = combined.trim().split(/\s+/);
+                    
+                    if (parts.length > 1) {
+                        makeInput.value = parts[0];
+                        modelInput.value = parts.slice(1).join(' ');
+                    }
+                } else {
+                    // Combine mode
+                    makeInput.value = makeInput.getAttribute('data-original-value');
+                    modelInput.value = modelInput.getAttribute('data-original-value');
                 }
-                this.textContent = 'Restore Original';
-            } else {
-                // Restore original values
-                makeInput.value = makeInput.getAttribute('data-original-vehicle');
-                modelInput.value = modelInput.getAttribute('data-original-model');
-                this.textContent = 'Split Make/Model';
-            }
+            });
+            
+            button.textContent = button.textContent === 'Toggle Make/Model Split' 
+                ? 'Restore Original' 
+                : 'Toggle Make/Model Split';
+        }
+
+        // Handle row exclusion
+        document.querySelectorAll('input[name="exclude[]"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const row = this.closest('tr');
+                if (this.checked) {
+                    row.classList.add('excluded');
+                } else {
+                    row.classList.remove('excluded');
+                }
+            });
         });
-    };
     </script>
 </body>
 </html>
