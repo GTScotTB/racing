@@ -2,32 +2,13 @@
 <html>
 <head>
     <title>Map CSV Columns</title>
-    <style>
-        .mapping-container {
-            margin: 20px;
-        }
-        .mapping-row {
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-        }
-        .mapping-row label {
-            width: 150px;
-            font-weight: bold;
-        }
-        select {
-            width: 200px;
-            padding: 5px;
-        }
-        .submit-button {
-            margin-top: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="mapping-container">
-        <h1>Map Database Fields to CSV Columns</h1>
-        
+        <header>
+            <h1>Map Database Fields to CSV Columns</h1>
+        </header>
         <form action="{{ url_for('preview_data') }}" method="POST" id="mappingForm">
             <!-- Store the raw data as stringified JSON -->
             <input type="hidden" id="rawCsvData" name="raw_csv_data" value="">
