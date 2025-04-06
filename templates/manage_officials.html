@@ -41,6 +41,8 @@
       {% for official in officials %}
       <tr>
         <form method="POST" action="{{ url_for('manage_officials') }}">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <td>
             <input type="text" name="name" value="{{ official.name }}">
           </td>

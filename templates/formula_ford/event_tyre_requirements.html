@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Tyre Requirements - Formula Ford</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Event Tyre Requirements</h1>
+            <h3>Round {{ event.round_number }} - {{ event.location }}</h3>
+            <p class="text-muted">{{ event.event_date.strftime('%d %B, %Y') }}</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Tyre Requirements Section -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2>Tyre Requirements</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editRequirementsModal">
+                    {% if requirements %}Edit Requirements{% else %}Add Requirements{% endif %}
+                </button>
+            </div>
+            <div class="card-body">
+                {% if requirements %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h5>Allowed Practice Tyre Brands:</h5>
+                            <p>{{ requirements.allowed_practice_brands|default('Not specified') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h5>Allowed Practice Tyre Compounds:</h5>
+                            <p>{{ requirements.allowed_practice_compounds|default('Not specified') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h5>Maximum Sets Allowed:</h5>
+                            <p><strong>{{ requirements.max_sets_allowed|default('Not specified') }}</strong></p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <h5>Allowed Race Tyre Brands:</h5>
+                            <p>{{ requirements.allowed_race_brands|default('Not specified') }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h5>Allowed Race Tyre Compounds:</h5>
+                            <p>{{ requirements.allowed_race_compounds|default('Not specified') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h5>Notes:</h5>
+                    <p>{{ requirements.notes|default('No notes') }}</p>
+                </div>
+                <div class="text-muted">
+                    <small>Created by: {{ requirements.created_by|default('Unknown') }}</small><br>
+                    <small>Date created: {{ requirements.date_created.strftime('%d-%m-%Y') if requirements.date_created else 'Unknown' }}</small>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No tyre requirements have been set for this event yet. Click the "Add Requirements" button to set them.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Competitor Tyre Records Section -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Competitor Tyre Checks</h2>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-3">
+                    <a href="{{ url_for('event_tyre_records', event_id=event.id) }}" class="btn btn-primary">
+                        <i class="bi bi-clipboard-check"></i> View/Edit Competitor Records
+                    </a>
+                </div>
+                
+                {% if records %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Car #</th>
+                                <th>Competitor</th>
+                                <th>Practice Tyres</th>
+                                <th>Race Tyres</th>
+                                <th>Inspector</th>
+                                <th>Check Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in records %}
+                            <tr>
+                                <td>{{ record.competitor.car_number }}</td>
+                                <td>{{ record.competitor.first_name }} {{ record.competitor.last_name }}</td>
+                                <td>
+                                    <strong>{{ record.practice_tyre_brand }}</strong> {{ record.practice_tyre_compound }}
+                                    <div><small class="text-muted">S/N: {{ record.practice_tyre_serial_numbers }}</small></div>
+                                </td>
+                                <td>
+                                    <strong>{{ record.race_tyre_brand }}</strong> {{ record.race_tyre_compound }}
+                                    <div><small class="text-muted">S/N: {{ record.race_tyre_serial_numbers }}</small></div>
+                                </td>
+                                <td>{{ record.inspector_name|default('') }}</td>
+                                <td>{{ record.check_date.strftime('%d-%m-%Y') if record.check_date else '' }}</td>
+                                <td>
+                                    {% if record.practice_tyre_brand and record.race_tyre_brand %}
+                                        <span class="badge bg-success">Complete</span>
+                                    {% elif record.practice_tyre_brand or record.race_tyre_brand %}
+                                        <span class="badge bg-warning">Partial</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Not Started</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No competitor tyre checks have been performed yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+            <a href="{{ url_for('event_technical_requirements', event_id=event.id) }}" class="btn btn-secondary me-2">
+                <i class="bi bi-tools"></i> Technical Requirements
+            </a>
+            <a href="{{ url_for('event_competitors', event_id=event.id) }}" class="btn btn-secondary me-2">
+                <i class="bi bi-people"></i> Competitors
+            </a>
+            <a href="{{ url_for('manage_formula_ford_events') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Events
+            </a>
+        </div>
+    </div>
+    
+    <!-- Edit Requirements Modal -->
+    <div class="modal fade" id="editRequirementsModal" tabindex="-1" aria-labelledby="editRequirementsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editRequirementsModalLabel">
+                        {% if requirements %}Edit Tyre Requirements{% else %}Add Tyre Requirements{% endif %}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ url_for('update_event_tyre_requirements', event_id=event.id) }}" method="post">
+                    <!-- CSRF token for security -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="allowed_practice_brands" class="form-label">Allowed Practice Tyre Brands:</label>
+                                    <input type="text" class="form-control" id="allowed_practice_brands" name="allowed_practice_brands" 
+                                           value="{{ requirements.allowed_practice_brands if requirements else '' }}">
+                                    <small class="form-text text-muted">Separate multiple brands with commas</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="allowed_practice_compounds" class="form-label">Allowed Practice Tyre Compounds:</label>
+                                    <input type="text" class="form-control" id="allowed_practice_compounds" name="allowed_practice_compounds"
+                                           value="{{ requirements.allowed_practice_compounds if requirements else '' }}">
+                                    <small class="form-text text-muted">Separate multiple compounds with commas</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="allowed_race_brands" class="form-label">Allowed Race Tyre Brands:</label>
+                                    <input type="text" class="form-control" id="allowed_race_brands" name="allowed_race_brands"
+                                           value="{{ requirements.allowed_race_brands if requirements else '' }}">
+                                    <small class="form-text text-muted">Separate multiple brands with commas</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="allowed_race_compounds" class="form-label">Allowed Race Tyre Compounds:</label>
+                                    <input type="text" class="form-control" id="allowed_race_compounds" name="allowed_race_compounds"
+                                           value="{{ requirements.allowed_race_compounds if requirements else '' }}">
+                                    <small class="form-text text-muted">Separate multiple compounds with commas</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="max_sets_allowed" class="form-label">Maximum Sets Allowed:</label>
+                            <input type="number" class="form-control" id="max_sets_allowed" name="max_sets_allowed"
+                                   value="{{ requirements.max_sets_allowed if requirements else '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes:</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3">{{ requirements.notes if requirements else '' }}</textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="created_by" class="form-label">Created By:</label>
+                            <input type="text" class="form-control" id="created_by" name="created_by" 
+                                   value="{{ requirements.created_by if requirements else current_user.username }}" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Requirements</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timetable - Formula Ford</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Timetable</h1>
+            <h3>Round {{ event.round_number }} - {{ event.location }}</h3>
+            <p class="text-muted">{{ event.event_date.strftime('%d %B, %Y') }}</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Add Session Button -->
+        <div class="mb-3">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSessionModal">
+                <i class="bi bi-plus-circle"></i> Add Session
+            </button>
+        </div>
+
+        <!-- Timetable Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Sessions</h2>
+            </div>
+            <div class="card-body">
+                {% if sessions %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Start Time</th>
+                                <th>Duration</th>
+                                <th>Session</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in sessions %}
+                            <tr>
+                                <td>{{ session.start_time.strftime('%H:%M') }}</td>
+                                <td>{{ session.duration }} min</td>
+                                <td>{{ session.session_name }}</td>
+                                <td>
+                                    {% if session.session_type == 'Practice' %}
+                                        <span class="badge bg-primary">Practice</span>
+                                    {% elif session.session_type == 'Qualifying' %}
+                                        <span class="badge bg-info">Qualifying</span>
+                                    {% elif session.session_type == 'Race' %}
+                                        <span class="badge bg-success">Race</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ session.session_type }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="{{ url_for('edit_timetable_session', event_id=event.id, session_id=session.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmDelete({{ event.id }}, {{ session.id }}, '{{ session.session_name }}')">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No sessions added yet. Use the "Add Session" button to create the timetable.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+            <a href="{{ url_for('event_competitors', event_id=event.id) }}" class="btn btn-secondary me-2">
+                <i class="bi bi-people"></i> Competitors
+            </a>
+            <a href="{{ url_for('manage_formula_ford_events') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Events
+            </a>
+        </div>
+
+        <!-- Add Session Modal -->
+        <div class="modal fade" id="addSessionModal" tabindex="-1" aria-labelledby="addSessionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addSessionModalLabel">Add Timetable Session</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="{{ url_for('add_timetable_session', event_id=event.id) }}" method="post">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="session_name" class="form-label">Session Name</label>
+                                <input type="text" class="form-control" id="session_name" name="session_name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="session_type" class="form-label">Session Type</label>
+                                <select class="form-select" id="session_type" name="session_type" required>
+                                    <option value="">-- Select Type --</option>
+                                    <option value="Practice">Practice</option>
+                                    <option value="Qualifying">Qualifying</option>
+                                    <option value="Race">Race</option>
+                                    <option value="Briefing">Briefing</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="start_time" class="form-label">Start Time</label>
+                                <input type="time" class="form-control" id="start_time" name="start_time" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="duration" class="form-label">Duration (minutes)</label>
+                                <input type="number" class="form-control" id="duration" name="duration" min="1" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Add Session</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delete Session Modal -->
+        <div class="modal fade" id="deleteSessionModal" tabindex="-1" aria-labelledby="deleteSessionModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteSessionModalLabel">Confirm Deletion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete the session: <span id="sessionName"></span>?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form id="deleteSessionForm" method="post">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-danger">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmDelete(eventId, sessionId, sessionName) {
+            document.getElementById('sessionName').textContent = sessionName;
+            document.getElementById('deleteSessionForm').action = 
+                `/formula_ford/events/${eventId}/timetable/${sessionId}/delete`;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteSessionModal'));
+            deleteModal.show();
+        }
+    </script>
+</body>
+</html> 

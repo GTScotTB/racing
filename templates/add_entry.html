@@ -13,6 +13,9 @@
 
   <!-- Entry Form -->
   <form action="/add_entry" method="POST">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    
     <label for="vehicle_number">Vehicle Number (required):</label>
     <input type="text" id="vehicle_number" name="vehicle_number" required>
 

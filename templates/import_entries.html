@@ -23,6 +23,8 @@
     {% endwith %}
     
     <form method="POST" enctype="multipart/form-data" action="{{ url_for('import_entries') }}">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <div class="form-group">
         <label for="csv_file">Select CSV File:</label>
         <input type="file" id="csv_file" name="csv_file" accept=".csv" required>

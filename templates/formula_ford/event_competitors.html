@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Competitors - Formula Ford</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Event Competitors</h1>
+            <h3>Round {{ event.round_number }} - {{ event.location }}</h3>
+            <p class="text-muted">{{ event.event_date.strftime('%d %B, %Y') }}</p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Add Competitor Button -->
+        <div class="mb-3">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompetitorModal">
+                <i class="bi bi-plus-circle"></i> Add Competitor
+            </button>
+            
+            <div class="float-end">
+                <a href="{{ url_for('event_technical_requirements', event_id=event.id) }}" class="btn btn-outline-success me-2">
+                    <i class="bi bi-tools"></i> Technical Requirements
+                </a>
+                <a href="{{ url_for('event_tyre_requirements', event_id=event.id) }}" class="btn btn-outline-info me-2">
+                    <i class="bi bi-circle"></i> Tyre Requirements
+                </a>
+            </div>
+        </div>
+
+        <!-- Competitors Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h2>Competitors</h2>
+            </div>
+            <div class="card-body">
+                {% if competitors %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Car #</th>
+                                <th>Name</th>
+                                <th>Team</th>
+                                <th>Vehicle</th>
+                                <th>Status</th>
+                                <th>Weekend #</th>
+                                <th>Garage #</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for competitor in competitors %}
+                            <tr>
+                                <td>{{ competitor.car_number }}</td>
+                                <td>{{ competitor.first_name }} {{ competitor.last_name }}</td>
+                                <td>{{ competitor.team_association or 'N/A' }}</td>
+                                <td>{{ competitor.vehicle_make }} {{ competitor.vehicle_type }}</td>
+                                <td>
+                                    {% if competitor.entry_status %}
+                                        {% if competitor.entry_status == 'Confirmed' %}
+                                            <span class="badge bg-success">Confirmed</span>
+                                        {% elif competitor.entry_status == 'Provisional' %}
+                                            <span class="badge bg-warning">Provisional</span>
+                                        {% elif competitor.entry_status == 'Withdrawn' %}
+                                            <span class="badge bg-danger">Withdrawn</span>
+                                        {% elif competitor.entry_status == 'Reserve' %}
+                                            <span class="badge bg-info">Reserve</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ competitor.entry_status }}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-secondary">Not Entered</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ competitor.weekend_car_number if competitor.weekend_car_number else '-' }}</td>
+                                <td>{{ competitor.FFgarage_number if competitor.FFgarage_number else '-' }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        {% if competitor.entry_id %}
+                                        <a href="{{ url_for('edit_event_entry', event_id=event.id, entry_id=competitor.entry_id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmRemove('{{ event.id }}', '{{ competitor.entry_id }}', '{{ competitor.first_name }} {{ competitor.last_name }}')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No competitors registered for this event yet. Use the "Add Competitor" button to add competitors.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
+            <a href="{{ url_for('manage_formula_ford_events') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Events
+            </a>
+            {% if event.round_number == 1 %}
+            <a href="{{ url_for('formula_ford_round1') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Round 1
+            </a>
+            {% elif event.round_number == 2 %}
+            <a href="{{ url_for('formula_ford_round2') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Round 2
+            </a>
+            {% elif event.round_number == 3 %}
+            <a href="{{ url_for('formula_ford_round3') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Round 3
+            </a>
+            {% elif event.round_number == 4 %}
+            <a href="{{ url_for('formula_ford_round4') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Round 4
+            </a>
+            {% elif event.round_number == 5 %}
+            <a href="{{ url_for('formula_ford_round5') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Round 5
+            </a>
+            {% elif event.round_number == 6 %}
+            <a href="{{ url_for('formula_ford_round6') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Round 6
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Add Competitor Modal -->
+        <div class="modal fade" id="addCompetitorModal" tabindex="-1" aria-labelledby="addCompetitorModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addCompetitorModalLabel">Add Competitor to Event</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form action="/formula_ford/events/{{ event.id }}/competitors/add" method="post">
+                        <!-- CSRF token for security -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="competitor_id" class="form-label">Select Competitor</label>
+                                <select name="competitor_id" class="form-select mb-3" required>
+                                    <option value="">Select Competitor</option>
+                                    {% for competitor in available_competitors %}
+                                        <option value="{{ competitor.id }}">{{ competitor.car_number }} - {{ competitor.first_name }} {{ competitor.last_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="weekend_car_number" class="form-label">Weekend Car Number (Optional)</label>
+                                <input type="text" class="form-control" id="weekend_car_number" name="weekend_car_number" placeholder="Enter weekend-specific car number">
+                                <small class="text-muted">Leave blank to use regular car number</small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="FFgarage_number" class="form-label">Garage Number (Optional)</label>
+                                <input type="text" class="form-control" id="FFgarage_number" name="FFgarage_number" placeholder="Enter garage number">
+                            </div>
+                            <div class="mb-3">
+                                <label for="entry_status" class="form-label">Entry Status</label>
+                                <select name="entry_status" class="form-select mb-3" required>
+                                    <option value="">Select Status</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="provisional">Provisional</option>
+                                    <option value="withdrawn">Withdrawn</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Add Competitor</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Remove Competitor Modal -->
+        <div class="modal fade" id="removeCompetitorModal" tabindex="-1" aria-labelledby="removeCompetitorModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="removeCompetitorModalLabel">Confirm Removal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to remove <span id="competitorName"></span> from this event?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form id="removeCompetitorForm" method="post">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-danger">Remove</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function confirmRemove(eventId, competitorId, competitorName) {
+            document.getElementById('competitorName').textContent = competitorName;
+            document.getElementById('removeCompetitorForm').action = 
+                `/formula_ford/events/${eventId}/entries/${competitorId}/delete`;
+            var removeModal = new bootstrap.Modal(document.getElementById('removeCompetitorModal'));
+            removeModal.show();
+        }
+    </script>
+</body>
+</html> 

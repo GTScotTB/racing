@@ -16,6 +16,7 @@
 
   <form id="checklistForm" action="/update_checklist2" method="POST">
     <input type="hidden" name="checklist_id" value="{{ checklist.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
     <table border="1">
       <thead>

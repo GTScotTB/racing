@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Ford Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .dashboard-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+        }
+        .dashboard-card h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .dashboard-card p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .action-button {
+            display: inline-block;
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .action-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Formula Ford Dashboard</h1>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <p class="flash {{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <h2>Events</h2>
+            <p>Manage Formula Ford events, schedules, and entries</p>
+            <a href="{{ url_for('manage_formula_ford_events') }}" class="action-button">Manage Events</a>
+        </div>
+
+        <div class="dashboard-card">
+            <h2>Competitors</h2>
+            <p>View and manage Formula Ford competitors</p>
+            <a href="{{ url_for('manage_formula_ford_competitors') }}" class="action-button">Manage Competitors</a>
+        </div>
+
+        <div class="dashboard-card">
+            <h2>Technical Checks</h2>
+            <p>View and manage technical inspections</p>
+            <a href="{{ url_for('manage_formula_ford_technical_checks') }}" class="action-button">View Technical Checks</a>
+        </div>
+
+        <div class="dashboard-card">
+            <h2>Tyre Management</h2>
+            <p>Track and manage tyre usage</p>
+            <a href="{{ url_for('manage_formula_ford_tyre_checks') }}" class="action-button">Manage Tyres</a>
+        </div>
+
+        <div class="dashboard-card">
+            <h2>Reports</h2>
+            <p>Generate and view reports</p>
+            <a href="{{ url_for('formula_ford_reports') }}" class="action-button">View Reports</a>
+        </div>
+
+        <div class="dashboard-card">
+            <h2>Settings</h2>
+            <p>Configure Formula Ford settings</p>
+            <a href="{{ url_for('formula_ford_settings') }}" class="action-button">Settings</a>
+        </div>
+    </div>
+
+    <!-- Rounds Section -->
+    <div style="margin: 40px 20px;">
+        <h2 style="text-align: center; margin-bottom: 20px;">Formula Ford Rounds</h2>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;">
+            <a href="{{ url_for('formula_ford_round1') }}" class="action-button">Round 1</a>
+            <a href="{{ url_for('formula_ford_round2') }}" class="action-button">Round 2</a>
+            <a href="{{ url_for('formula_ford_round3') }}" class="action-button">Round 3</a>
+            <a href="{{ url_for('formula_ford_round4') }}" class="action-button">Round 4</a>
+            <a href="{{ url_for('formula_ford_round5') }}" class="action-button">Round 5</a>
+            <a href="{{ url_for('formula_ford_round6') }}" class="action-button">Round 6</a>
+            <a href="{{ url_for('formula_ford_round7') }}" class="action-button">Round 7</a>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="/logout" class="action-button">Logout</a>
+    </div>
+</body>
+</html> 

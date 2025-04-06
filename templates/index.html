@@ -3,65 +3,47 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WTAC Dashboard</title>
-  <!-- Linking the CSS file from the static directory -->
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-  <script src="{{ url_for('static', filename='app.js') }}" defer></script> <!-- Link to the JS file -->
+  <title>Racing Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .dashboard-button {
+      height: 200px;
+      font-size: 2rem;
+      margin: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+    }
+    .dashboard-button:hover {
+      transform: scale(1.05);
+    }
+    .wtac-button {
+      background-color: #007bff;
+      color: white;
+    }
+    .formula-ford-button {
+      background-color: #28a745;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>WTAC Dashboard</h1>
-  </header>
-  <!-- Flash Messages -->
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <div class="flash-messages">
-        {% for category, message in messages %}
-          <p class="flash {{ category }}">{{ message }}</p>
-        {% endfor %}
+  <div class="container mt-5">
+    <h1 class="text-center mb-5">Racing Management System</h1>
+    <div class="row">
+      <div class="col-md-6">
+        <a href="{{ url_for('wtac_dashboard') }}" class="btn dashboard-button wtac-button w-100">
+          World Time Attack Challenge
+        </a>
       </div>
-    {% endif %}
-  {% endwith %}
-  <section id="dashboard">
-    <h2>Dashboard Overview</h2>
-    <p>Total Entries : <span id="totalEntries">Loading...</span></p>
-    <p>Total Entries By Class:</p>
-    <ul id="classEntries">Loading...</ul>
-    <p>Total Entries Without Inspection Report: <span id="missingReports">Loading...</span></p>
-    <p>Total Entries Without Approval to Start: <span id="notApproved">Loading...</span></p>
-    <p>Total Entries With Failed Items: <span id="failedItems">Loading...</span></p>
-    <p>Vehicles Denied Start: <span id="deniedStart">Loading...</span></p>
-  </section>
-
-  <section id="actions">
-    <h2>Actions</h2>
-    <button onclick="window.location.href='/add_entry'">Add Entry</button>
-    <button onclick="window.location.href='/lookup_entry'">Look Up Entry</button>
-    <button onclick="window.location.href='/lookup_entry2'">Look Up Entry Button Style</button>
-    <button onclick="window.location.href='/outstanding_items'">View Outstanding Items</button>
-    <button onclick="window.location.href='/not_approved'">Not Approved To Start</button>
-    <button onclick="window.location.href='/not_presented'">Vehicles Not Yet Presented</button>
-    <button onclick="window.location.href='/denied_start'">Serious Fault NOT APPROVED</button>
-    <button onclick="window.location.href='/garage_numbers'">View Garage Numbers</button>
-    <button onclick="window.location.href='/vehicle_weights'">View Vehicle Weights</button>
-  </section>
-  {% if role == 'admin' %}
-    <section id="Admin Buttons">
-      <h2>Admin Actions</h2>
-      <button class="admin-button" onclick="window.location.href='/manage_entries'">Manage Entries</button>
-      <button class="admin-button" onclick="window.location.href='/manage_checklists'">Manage Checklists</button>
-      <button class="admin-button" onclick="window.location.href='/scrutineers'">View Scrutineers</button>
-      <button class="admin-button" onclick="window.location.href='/add_official'">Add Officals</button>
-      <button class="admin-button" onclick="window.location.href='/manage_officials'">Manage Officials</button>
-      <button class="admin-button" onclick="window.location.href='/import_entries'">Import Entries</button>
-      <h3>Database Purge</h3>
-      <button class="admin-button" onclick="window.location.href='/purge_database'">PURGE ALL</button>
-    </section>
-  {% else %}
-  {% endif %}
-    <section id="logout">
-    <h2>Logout</h2>
-    <button class="auth-button" onclick="window.location.href='/logout'">Logout</button>
-    </section>
+      <div class="col-md-6">
+        <a href="{{ url_for('formula_ford_dashboard') }}" class="btn dashboard-button formula-ford-button w-100">
+          Formula Ford
+        </a>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

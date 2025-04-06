@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Check - {{ event.location }} (Round {{ event.round_number }})</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .check-header {
+            margin-bottom: 20px;
+        }
+        .competitor-table {
+            margin-top: 20px;
+        }
+        .status-select {
+            min-width: 100px;
+        }
+        .notes-field {
+            width: 100%;
+        }
+        .result-column {
+            min-width: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Technical Check - {{ event.location }} (Round {{ event.round_number }})</h1>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="row check-header">
+            <div class="col-md-6">
+                <form id="check-type-form" method="GET" class="d-flex align-items-center">
+                    <label for="check-type" class="me-2">Check Type:</label>
+                    <select id="check-type" name="check_type" class="form-select me-2" onchange="this.form.submit()">
+                        <option value="weight" {% if check_type == 'weight' %}selected{% endif %}>Weight Check</option>
+                        <option value="height" {% if check_type == 'height' %}selected{% endif %}>Height Check</option>
+                        <option value="fuel" {% if check_type == 'fuel' %}selected{% endif %}>Fuel Check</option>
+                        <option value="track_width" {% if check_type == 'track_width' %}selected{% endif %}>Track Width</option>
+                        <option value="tyre" {% if check_type == 'tyre' %}selected{% endif %}>Tyre Check</option>
+                        <option value="throttle_size" {% if check_type == 'throttle_size' %}selected{% endif %}>Throttle Size</option>
+                        <option value="ecu" {% if check_type == 'ecu' %}selected{% endif %}>ECU Check</option>
+                        <option value="engine" {% if check_type == 'engine' %}selected{% endif %}>Engine Check</option>
+                        <option value="map_sensor" {% if check_type == 'map_sensor' %}selected{% endif %}>MAP Sensor</option>
+                        <option value="air_temp_sensor" {% if check_type == 'air_temp_sensor' %}selected{% endif %}>Air Temp Sensor</option>
+                        <option value="lsd" {% if check_type == 'lsd' %}selected{% endif %}>LSD Check</option>
+                        <option value="transponder" {% if check_type == 'transponder' %}selected{% endif %}>Transponder</option>
+                        <option value="dash_data" {% if check_type == 'dash_data' %}selected{% endif %}>Dash Data</option>
+                        <option value="first_gear" {% if check_type == 'first_gear' %}selected{% endif %}>First Gear</option>
+                        <option value="flywheel" {% if check_type == 'flywheel' %}selected{% endif %}>Flywheel</option>
+                        <option value="other" {% if check_type == 'other' %}selected{% endif %}>Other Check</option>
+                    </select>
+                </form>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="{{ url_for('event_technical_checks', event_id=event.id) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Technical Checks
+                </a>
+            </div>
+        </div>
+        
+        <div class="competitor-table">
+            <h3>{{ check_type|replace('_', ' ')|title }} Results</h3>
+            <form id="batch-save-form" method="POST" action="{{ url_for('save_all_technical_checks', event_id=event.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="check_type" value="{{ check_type }}">
+                
+                {% if check_type == 'other' %}
+                <div class="mb-3 row">
+                    <div class="col-md-6">
+                        <label for="other-check-name" class="form-label">Check Name:</label>
+                        <div class="input-group">
+                            <input type="text" id="other-check-name" name="other_check_name" class="form-control" 
+                                  value="{{ entries[0].competitor_check.other_check_name if entries and entries[0].competitor_check else '' }}">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                Previous Checks
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" id="previous-checks-dropdown">
+                                <li><a class="dropdown-item" href="#">Loading...</a></li>
+                            </ul>
+                        </div>
+                        <small class="text-muted">Enter check name or select from previous checks</small>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Car #</th>
+                            <th>Weekend #</th>
+                            <th>Competitor</th>
+                            {% if check_type == 'weight' %}
+                                <th class="result-column">Weight (kg)</th>
+                            {% elif check_type == 'ecu' %}
+                                <th class="result-column">ECU Number</th>
+                                <th class="result-column">ECU Tune</th>
+                            {% elif check_type == 'engine' %}
+                                <th class="result-column">Engine Number</th>
+                            {% elif check_type == 'other' %}
+                                <th class="result-column">Result</th>
+                            {% else %}
+                                <th class="result-column">Status</th>
+                            {% endif %}
+                            <th>Notes</th>
+                            <th>Individual Save</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in entries %}
+                        <tr>
+                            <form method="POST" action="{{ url_for('save_technical_check', event_id=event.id) }}">
+                                <input type="hidden" name="competitor_id" value="{{ entry.competitor_id }}">
+                                <input type="hidden" name="check_type" value="{{ check_type }}">
+                                <td>{{ entry.competitor.car_number }}</td>
+                                <td>{{ entry.weekend_car_number if entry.weekend_car_number else "-" }}</td>
+                                <td>{{ entry.competitor.name }}</td>
+                                <td>
+                                    {% if check_type == 'weight' %}
+                                        <input type="text" name="weight" class="form-control weight-input" value="{{ entry.competitor_check.result if entry.competitor_check else '' }}">
+                                    {% elif check_type == 'ecu' %}
+                                        {% set ecu_data = entry.competitor_check.result.split(', ') if entry.competitor_check and entry.competitor_check.result else ['Number: ', 'Tune: '] %}
+                                        {% set ecu_number = ecu_data[0].replace('Number: ', '') if ecu_data|length > 0 else '' %}
+                                        {% set ecu_tune = ecu_data[1].replace('Tune: ', '') if ecu_data|length > 1 else '' %}
+                                        <div class="mb-2">
+                                            <label>ECU Number:</label>
+                                            <input type="text" name="ecu_number" class="form-control" value="{{ ecu_number }}">
+                                        </div>
+                                        <div>
+                                            <label>ECU Tune:</label>
+                                            <input type="text" name="ecu_tune" class="form-control" value="{{ ecu_tune }}">
+                                        </div>
+                                    {% elif check_type == 'engine' %}
+                                        <input type="text" name="engine_number" class="form-control" value="{{ entry.competitor_check.result if entry.competitor_check else '' }}">
+                                    {% elif check_type == 'other' %}
+                                        <div class="mb-2">
+                                            <label>Check Name:</label>
+                                            {% set check_name = '' %}
+                                            {% if entry.competitor_check and entry.competitor_check.result and ':' in entry.competitor_check.result %}
+                                                {% set check_name = entry.competitor_check.result.split(':')[0] %}
+                                            {% endif %}
+                                            <input type="text" name="other_check_name" class="form-control check-name-input" 
+                                                value="{{ check_name }}" list="previous_check_names">
+                                        </div>
+                                        <div>
+                                            <label>Status:</label>
+                                            <input type="text" name="other_status" class="form-control" value="{{ entry.competitor_check.result.split(':')[1].strip() if entry.competitor_check and entry.competitor_check.result and ':' in entry.competitor_check.result else '' }}">
+                                        </div>
+                                    {% else %}
+                                        <select name="{{ check_type }}_status" class="form-select">
+                                            <option value="" {% if not entry.competitor_check or not entry.competitor_check.result %}selected{% endif %}>-- Select --</option>
+                                            <option value="Pass" {% if entry.competitor_check and entry.competitor_check.result == 'Pass' %}selected{% endif %}>Pass</option>
+                                            <option value="Fail" {% if entry.competitor_check and entry.competitor_check.result == 'Fail' %}selected{% endif %}>Fail</option>
+                                            <option value="Pending" {% if entry.competitor_check and entry.competitor_check.result == 'Pending' %}selected{% endif %}>Pending</option>
+                                        </select>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <textarea name="notes" class="form-control" rows="2">{{ entry.competitor_check.notes if entry.competitor_check else '' }}</textarea>
+                                </td>
+                                <td>
+                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                                </td>
+                            </form>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <div class="d-flex justify-content-end mt-3 mb-4">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        <i class="bi bi-save"></i> Save All Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="mb-4 mt-4 text-end">
+            <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Formula Ford Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            {% if check_type == 'other' %}
+                // Load previous "other check" names via API
+                fetch('{{ url_for("get_other_check_names", event_id=event.id) }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        const dropdown = document.getElementById('previous-checks-dropdown');
+                        dropdown.innerHTML = '';
+                        
+                        if (data.check_names && data.check_names.length > 0) {
+                            // Add each check name to the dropdown
+                            data.check_names.forEach(name => {
+                                const item = document.createElement('li');
+                                const link = document.createElement('a');
+                                link.classList.add('dropdown-item');
+                                link.href = '#';
+                                link.textContent = name;
+                                link.addEventListener('click', function(e) {
+                                    e.preventDefault();
+                                    document.getElementById('other-check-name').value = name;
+                                });
+                                item.appendChild(link);
+                                dropdown.appendChild(item);
+                            });
+                        } else {
+                            // No previous check names
+                            const item = document.createElement('li');
+                            const link = document.createElement('a');
+                            link.classList.add('dropdown-item');
+                            link.href = '#';
+                            link.textContent = 'No previous checks found';
+                            item.appendChild(link);
+                            dropdown.appendChild(item);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching previous check names:', error);
+                        const dropdown = document.getElementById('previous-checks-dropdown');
+                        dropdown.innerHTML = '<li><a class="dropdown-item" href="#">Error loading checks</a></li>';
+                    });
+            {% endif %}
+        });
+        
+        // Function to copy data from the main form to the individual save form's hidden fields
+        function copyFormDataToHiddenFields(form, competitorId) {
+            const hiddenFields = form.querySelectorAll('.copy-data-field');
+            hiddenFields.forEach(function(field) {
+                const sourceId = field.dataset.source;
+                if (sourceId) {
+                    const sourceElement = document.querySelector('[name="' + sourceId + '"]');
+                    if (sourceElement) {
+                        field.value = sourceElement.value;
+                    }
+                }
+            });
+        }
+    </script>
+
+    {% if check_type == 'other' %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch previous 'other check' names
+            fetch("{{ url_for('get_other_check_names', event_id=event.id) }}")
+                .then(response => response.json())
+                .then(data => {
+                    const datalist = document.getElementById('previous_check_names');
+                    if (data.check_names && data.check_names.length > 0) {
+                        data.check_names.forEach(name => {
+                            const option = document.createElement('option');
+                            option.value = name;
+                            datalist.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error fetching check names:', error));
+        });
+    </script>
+    {% endif %}
+
+    <datalist id="previous_check_names"></datalist>
+</body>
+</html> 

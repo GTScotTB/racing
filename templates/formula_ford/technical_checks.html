@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Checks - {{ event.location }} (Round {{ event.round_number }})</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .check-card {
+            margin-bottom: 20px;
+            transition: transform 0.3s;
+        }
+        .check-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Technical Checks - {{ event.location }} (Round {{ event.round_number }})</h1>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card check-card">
+                    <div class="card-header bg-info text-white">
+                        Vehicle Dimensions
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <a href="{{ url_for('weight_height_tracking', event_id=event.id) }}" class="text-decoration-none">
+                                    <i class="bi bi-speedometer"></i> Weight Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('weight_height_tracking', event_id=event.id) }}" class="text-decoration-none">
+                                    <i class="bi bi-arrows-expand"></i> Height Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='track_width') }}" class="text-decoration-none">
+                                    <i class="bi bi-arrow-left-right"></i> Track Width
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card check-card">
+                    <div class="card-header bg-success text-white">
+                        Engine & Performance
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='ecu') }}" class="text-decoration-none">
+                                    <i class="bi bi-cpu"></i> ECU Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='engine') }}" class="text-decoration-none">
+                                    <i class="bi bi-gear"></i> Engine Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='throttle_size') }}" class="text-decoration-none">
+                                    <i class="bi bi-disc"></i> Throttle Size
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='map_sensor') }}" class="text-decoration-none">
+                                    <i class="bi bi-graph-up"></i> MAP Sensor
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='air_temp_sensor') }}" class="text-decoration-none">
+                                    <i class="bi bi-thermometer"></i> Air Temp Sensor
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card check-card">
+                    <div class="card-header bg-warning text-dark">
+                        Other Checks
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='fuel') }}" class="text-decoration-none">
+                                    <i class="bi bi-fuel-pump"></i> Fuel Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='tyre') }}" class="text-decoration-none">
+                                    <i class="bi bi-circle"></i> Tyre Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='lsd') }}" class="text-decoration-none">
+                                    <i class="bi bi-gear-wide-connected"></i> LSD Check
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='transponder') }}" class="text-decoration-none">
+                                    <i class="bi bi-broadcast"></i> Transponder
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='dash_data') }}" class="text-decoration-none">
+                                    <i class="bi bi-display"></i> Dash Data
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='first_gear') }}" class="text-decoration-none">
+                                    <i class="bi bi-1-circle"></i> First Gear
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='flywheel') }}" class="text-decoration-none">
+                                    <i class="bi bi-disc"></i> Flywheel
+                                </a>
+                            </li>
+                            <li class="list-group-item">
+                                <a href="{{ url_for('technical_check', event_id=event.id, check_type='other') }}" class="text-decoration-none">
+                                    <i class="bi bi-tools"></i> Other Custom Check
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-4 mt-4 text-center">
+            <a href="{{ url_for('formula_ford_round' + event.round_number|string, event_id=event.id) }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
+            </a>
+            <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-primary">
+                <i class="bi bi-speedometer2"></i> Formula Ford Dashboard
+            </a>
+        </div>
+
+        <div class="mb-4 mt-4 text-center">
+            <a href="{{ url_for('cleanup_technical_checks', event_id=event.id) }}" class="btn btn-warning" onclick="return confirm('This will remove any duplicate technical check records for this event. Continue?')">
+                <i class="bi bi-trash"></i> Clean Up Duplicate Technical Checks
+            </a>
+        </div>
+        
+        <div class="mb-4 mt-4 text-center">
+            <a href="{{ url_for('formula_ford_round' + event.round_number|string, event_id=event.id) }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
+            </a>
+            <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-primary">
+                <i class="bi bi-speedometer2"></i> Formula Ford Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

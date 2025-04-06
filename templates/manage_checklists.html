@@ -49,6 +49,8 @@
         <td>
           <!-- Each row's actions are wrapped in a form to allow deletion -->
           <form method="POST" action="{{ url_for('manage_checklists') }}">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="checklist_id" value="{{ checklist.checklist_id }}">
             <!-- View button that directs to the view checklist route -->
             <a href="{{ url_for('view_checklist2', checklist_id=checklist.checklist_id) }}">

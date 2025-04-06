@@ -1,0 +1,135 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.86.171:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 991-771-663
+127.0.0.1 - - [05/Apr/2025 12:21:49] "GET /login HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/scott/Documents/GitHub/racing/app.py", line 126, in login
+    return render_template('login.html', csrf_token=csrf_token)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/scott/Documents/GitHub/racing/templates/login.html", line 15, in top-level template code
+    <form action="{{ url_for('direct_login') }}" method="POST" id="login-form">
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+    
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'direct_login'. Did you mean 'login' instead?
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET /login?next=/ HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/scott/Documents/GitHub/racing/app.py", line 126, in login
+    return render_template('login.html', csrf_token=csrf_token)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/scott/Documents/GitHub/racing/templates/login.html", line 15, in top-level template code
+    <form action="{{ url_for('direct_login') }}" method="POST" id="login-form">
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+    
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'direct_login'. Did you mean 'login' instead?
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET / HTTP/1.1" 302 -
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET /login?next=/ HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/Users/scott/Documents/GitHub/racing/app.py", line 126, in login
+    return render_template('login.html', csrf_token=csrf_token)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/jinja2/environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/jinja2/environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/scott/Documents/GitHub/racing/templates/login.html", line 15, in top-level template code
+    <form action="{{ url_for('direct_login') }}" method="POST" id="login-form">
+    ^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1121, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/flask/app.py", line 1110, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+    
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'direct_login'. Did you mean 'login' instead?
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 304 -
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 304 -
+127.0.0.1 - - [05/Apr/2025 12:21:57] "GET /login?__debugger__=yes&cmd=resource&f=console.png&s=lA6ilZPTsccuKsn4R4nl HTTP/1.1" 200 -
+LOGIN: GET request - rendering login template
+LOGIN: GET request - rendering login template
+LOGIN: GET request - rendering login template

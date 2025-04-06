@@ -42,6 +42,8 @@
       <tr>
         <!-- Each row is enclosed in its own form -->
         <form method="POST" action="{{ url_for('manage_entries') }}">
+          <!-- CSRF Token -->
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <!-- Editable field for vehicle number -->
           <td>
             <input type="text" name="vehicle_number" value="{{ entry.vehicle_number }}">
@@ -55,7 +57,8 @@
             <select name="class_type">
               {% for cls in valid_classes %}
                 {% set normalized_value = cls.replace(' ', '_').lower() %}
-                <option value="{{ cls }}" {% if entry.class_type == normalized_value %}selected{% endif %}>
+                {% set entry_normalized = entry.class_type.replace(' ', '_').lower() if entry.class_type else '' %}
+                <option value="{{ normalized_value }}" {% if entry_normalized == normalized_value %}selected{% endif %}>
                   {{ cls }}
                 </option>
               {% endfor %}

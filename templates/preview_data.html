@@ -28,6 +28,7 @@
         <button type="button" onclick="toggleMakeModel()">Toggle Make/Model Split</button>
         
         <form method="POST" action="{{ url_for('import_data') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <table>
                 <thead>
                     <tr>
@@ -38,6 +39,8 @@
                         <th>Class</th>
                         <th>Team</th>
                         <th>Garage</th>
+                        <th>Log Book #</th>
+                        <th>License #</th>
                         <th>Exclude</th>
                     </tr>
                 </thead>
@@ -61,6 +64,8 @@
                         </td>
                         <td><input type="text" name="team_name[]" value="{{ row.get('team_name', '') }}"></td>
                         <td><input type="text" name="garage_number[]" value="{{ row.get('garage_number', '') }}"></td>
+                        <td><input type="text" name="log_book_number[]" value="{{ row.get('log_book_number', '') }}"></td>
+                        <td><input type="text" name="licence_number[]" value="{{ row.get('licence_number', '') }}"></td>
                         <td>
                             <input type="checkbox" name="exclude[]" value="true" 
                                    {% if row.should_exclude %}checked{% endif %}>

@@ -48,6 +48,8 @@
           <td>
             <!-- Button to View Checklist -->
             <form action="/view_checklist" method="POST" style="display:inline;">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="entry_id" value="{{ item.entry_id }}">
               <button type="submit">View Checklist</button>
             </form>

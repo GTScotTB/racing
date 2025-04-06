@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tyre Check - {{ competitor.first_name }} {{ competitor.last_name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .check-form {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input[type="text"],
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            min-height: 100px;
+        }
+        .action-button {
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .action-button:hover {
+            background-color: #0056b3;
+        }
+        .tyre-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .tyre-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tyre Check - {{ competitor.first_name }} {{ competitor.last_name }}</h1>
+        <h2>{{ event.location }} (Round {{ event.round_number }})</h2>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <p class="flash {{ category }}">{{ message }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <section id="tyre-check">
+        <form method="POST" action="{{ url_for('submit_tyre_check', event_id=event.id, competitor_id=competitor.id) }}" class="check-form">
+            <!-- CSRF token for security -->
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="tyre-section">
+                <h3>Practice Tyres</h3>
+                <div class="form-group">
+                    <label for="practice_tyre_brand">Brand:</label>
+                    <input type="text" id="practice_tyre_brand" name="practice_tyre_brand" value="{{ check.practice_tyre_brand if check else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="practice_tyre_compound">Compound:</label>
+                    <input type="text" id="practice_tyre_compound" name="practice_tyre_compound" value="{{ check.practice_tyre_compound if check else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="practice_tyre_serial_numbers">Serial Numbers:</label>
+                    <textarea id="practice_tyre_serial_numbers" name="practice_tyre_serial_numbers" required>{{ check.practice_tyre_serial_numbers if check else '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="tyre-section">
+                <h3>Race Tyres</h3>
+                <div class="form-group">
+                    <label for="race_tyre_brand">Brand:</label>
+                    <input type="text" id="race_tyre_brand" name="race_tyre_brand" value="{{ check.race_tyre_brand if check else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="race_tyre_compound">Compound:</label>
+                    <input type="text" id="race_tyre_compound" name="race_tyre_compound" value="{{ check.race_tyre_compound if check else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="race_tyre_serial_numbers">Serial Numbers:</label>
+                    <textarea id="race_tyre_serial_numbers" name="race_tyre_serial_numbers" required>{{ check.race_tyre_serial_numbers if check else '' }}</textarea>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inspector_name">Inspector Name:</label>
+                <input type="text" id="inspector_name" name="inspector_name" value="{{ check.inspector_name if check else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="check_date">Check Date:</label>
+                <input type="date" id="check_date" name="check_date" value="{{ check.check_date.strftime('%Y-%m-%d') if check else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="notes">Notes:</label>
+                <textarea id="notes" name="notes">{{ check.notes if check else '' }}</textarea>
+            </div>
+
+            <button type="submit" class="action-button">Submit Tyre Check</button>
+        </form>
+    </section>
+
+    <section id="navigation">
+        <button onclick="window.location.href='{{ url_for('event_competitors', event_id=event.id) }}'" class="action-button">Back to Competitors</button>
+        <button onclick="window.location.href='{{ url_for('manage_formula_ford_events') }}'" class="action-button">Back to Events</button>
+        <button onclick="window.location.href='/formula_ford_dashboard'" class="action-button">Back to Formula Ford Dashboard</button>
+        <button onclick="window.location.href='/logout'" class="action-button">Logout</button>
+    </section>
+</body>
+</html> 

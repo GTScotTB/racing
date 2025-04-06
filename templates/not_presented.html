@@ -38,6 +38,8 @@
           <td>
             <!-- Button to Create and View Checklist -->
             <form action="/view_checklist" method="POST" style="display:inline;">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <input type="hidden" name="entry_id" value="{{ vehicle.id }}">
               <button type="submit">Create & View Checklist</button>
             </form>

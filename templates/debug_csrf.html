@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CSRF Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .debug-section {
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .test-form {
+      margin-top: 30px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CSRF Debug Information</h1>
+  
+  <div class="debug-section">
+    <h2>Current CSRF Token</h2>
+    <pre>{{ csrf_token }}</pre>
+  </div>
+  
+  <div class="debug-section">
+    <h2>Session Data</h2>
+    <pre>{% for key, value in debug_info.session_data.items() %}{{ key }}: {{ value }}
+{% endfor %}</pre>
+  </div>
+  
+  <div class="debug-section">
+    <h2>Cookies</h2>
+    <pre>{% for key, value in debug_info.request_cookies.items() %}{{ key }}: {{ value }}
+{% endfor %}</pre>
+  </div>
+  
+  <div class="debug-section">
+    <h2>Session Configuration</h2>
+    <pre>SESSION_COOKIE_NAME: {{ debug_info.session_cookie_name }}
+SESSION_COOKIE_SECURE: {{ debug_info.session_cookie_secure }}
+SESSION_COOKIE_HTTPONLY: {{ debug_info.session_cookie_httponly }}
+Flask-WTF Version: {{ debug_info.flask_wtf_version }}</pre>
+  </div>
+  
+  <div class="test-form">
+    <h2>Test CSRF Form</h2>
+    <form method="POST" action="/debug_csrf_test">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button type="submit">Test CSRF Token</button>
+    </form>
+  </div>
+  
+  <div class="test-form">
+    <h2>Test Login Form</h2>
+    <form action="{{ url_for('login') }}" method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="admin" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" value="password" required>
+      </div>
+      <button type="submit">Test Login</button>
+    </form>
+  </div>
+  
+  <p><a href="/login">Go to Login Page</a></p>
+</body>
+</html> 

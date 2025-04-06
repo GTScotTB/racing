@@ -25,6 +25,8 @@
     </header>    
     <form action="/update_checklist" method="POST">
         <input type="hidden" name="checklist_id" value="{{ checklist.id }}">
+        <!-- CSRF token for security -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <!-- Button to Set All Dropdowns to "Pass" -->
         <button type="button" onclick="setAllToPass()">Set All to Pass</button>
 

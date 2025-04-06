@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Ford - Garage Numbers - Round {{ event.round_number }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .garage-number-input {
+            width: 80px;
+        }
+        .save-row-btn {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <header class="pb-3 mb-4 border-bottom">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="display-5 fw-bold">Formula Ford - Garage Numbers</h1>
+                    <h2 class="text-muted">Round {{ event.round_number }} - {{ event.location }}</h2>
+                    <p class="lead">{{ event.event_date.strftime('%d %B %Y') if event.event_date else 'Date TBD' }}</p>
+                </div>
+                <div class="text-end">
+                    <a href="{{ url_for('formula_ford_round' + event.round_number|string) }}" class="btn btn-primary me-2">
+                        <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">Garage Assignments</h3>
+            </div>
+            <div class="card-body">
+                {% if entries %}
+                <form id="save-all-form" method="POST" action="{{ url_for('save_all_garage_numbers', event_id=event.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Car #</th>
+                                    <th>Weekend #</th>
+                                    <th>Competitor</th>
+                                    <th>Team</th>
+                                    <th>Garage #</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in entries %}
+                                <tr>
+                                    <td>{{ entry.competitor.car_number }}</td>
+                                    <td>{{ entry.weekend_car_number if entry.weekend_car_number else '-' }}</td>
+                                    <td>{{ entry.competitor.first_name }} {{ entry.competitor.last_name }}</td>
+                                    <td>{{ entry.competitor.team_association }}</td>
+                                    <td>
+                                        <input type="text" class="form-control garage-number-input" 
+                                               name="garage_number_{{ entry.id }}" 
+                                               value="{{ entry.FFgarage_number if entry.FFgarage_number else '' }}">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-primary save-row-btn" 
+                                                data-entry-id="{{ entry.id }}">
+                                            <i class="bi bi-save"></i> Save
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-save"></i> Save All Garage Numbers
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    No competitors registered for this event yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Handle individual row save
+            $('.save-row-btn').click(function() {
+                const entryId = $(this).data('entry-id');
+                const garageNumber = $('input[name="garage_number_' + entryId + '"]').val();
+                
+                // Create a form with the current value
+                const form = $('<form>');
+                form.attr('method', 'POST');
+                form.attr('action', '{{ url_for("save_garage_number_row", event_id=event.id) }}');
+                
+                // Add CSRF token
+                const csrfToken = $('<input>');
+                csrfToken.attr('type', 'hidden');
+                csrfToken.attr('name', 'csrf_token');
+                csrfToken.attr('value', '{{ csrf_token }}');
+                form.append(csrfToken);
+                
+                // Add entry ID
+                const entryIdInput = $('<input>');
+                entryIdInput.attr('type', 'hidden');
+                entryIdInput.attr('name', 'entry_id');
+                entryIdInput.attr('value', entryId);
+                form.append(entryIdInput);
+                
+                // Add garage number
+                const garageNumberInput = $('<input>');
+                garageNumberInput.attr('type', 'hidden');
+                garageNumberInput.attr('name', 'garage_number');
+                garageNumberInput.attr('value', garageNumber);
+                form.append(garageNumberInput);
+                
+                // Submit the form
+                $('body').append(form);
+                form.submit();
+            });
+            
+            // Auto-dismiss flash messages after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 

@@ -55,6 +55,8 @@
       <td>{{ entry.garage_number or "Not Assigned" }}</td>
       <td>
         <form action="/view_checklist2" method="POST" style="display:inline;">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
           <input type="hidden" name="entry_id" value="{{ entry.id }}">
           <button type="submit">Select</button>
         </form>

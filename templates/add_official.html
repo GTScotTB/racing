@@ -25,6 +25,8 @@
     
     <!-- Add Official Form -->
     <form method="POST" action="{{ url_for('add_official') }}">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <label for="name">Name:</label>
       <input type="text" id="name" name="name" placeholder="Enter official's name" required>
       

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formula Ford Tyre Checklist - Round {{ event.round_number }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        .sticky-header th {
+            position: sticky;
+            top: 0;
+            background-color: #fff;
+            z-index: 10;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        .checkbox-cell {
+            text-align: center;
+        }
+        .checkbox-label {
+            margin-bottom: 0;
+            cursor: pointer;
+        }
+        .session-header {
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        .save-row-btn {
+            white-space: nowrap;
+        }
+        .flash-messages {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h1 class="display-5 mb-0">Formula Ford Tyre Checklist</h1>
+                <h2 class="text-muted">Round {{ event.round_number }} - {{ event.location }}</h2>
+                <p class="lead">{{ event.event_date.strftime('%d %B %Y') }}</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <a href="{{ url_for('formula_ford_round' + event.round_number|string) }}" class="btn btn-primary me-2">
+                    <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
+                </a>
+                <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary">
+                    <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Tyre Checklist</h4>
+            </div>
+            <div class="card-body">
+                {% if entries %}
+                <form id="save-all-form" method="POST" action="{{ url_for('save_all_tyre_checks', event_id=event.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    
+                    <div class="table-container">
+                        <table class="table table-striped table-bordered">
+                            <thead class="sticky-header">
+                                <tr>
+                                    <th rowspan="2" style="vertical-align: middle">Car #</th>
+                                    <th rowspan="2" style="vertical-align: middle">Weekend #</th>
+                                    <th rowspan="2" style="vertical-align: middle">Competitor</th>
+                                    <th colspan="2" class="text-center session-header">Marked Tyres</th>
+                                    <th colspan="4" class="text-center session-header">Practice Sessions</th>
+                                    <th colspan="1" class="text-center session-header">Qualifying</th>
+                                    <th colspan="3" class="text-center session-header">Races</th>
+                                    <th rowspan="2" style="vertical-align: middle">Actions</th>
+                                </tr>
+                                <tr>
+                                    <th class="checkbox-cell">TMP</th>
+                                    <th class="checkbox-cell">TMR</th>
+                                    <th class="checkbox-cell">P1</th>
+                                    <th class="checkbox-cell">P2</th>
+                                    <th class="checkbox-cell">P3</th>
+                                    <th class="checkbox-cell">P4</th>
+                                    <th class="checkbox-cell">Q</th>
+                                    <th class="checkbox-cell">R1</th>
+                                    <th class="checkbox-cell">R2</th>
+                                    <th class="checkbox-cell">R3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in entries %}
+                                <tr id="row-{{ entry.competitor_id }}">
+                                    <td>{{ entry.competitor.car_number }}</td>
+                                    <td>{{ entry.weekend_car_number if entry.weekend_car_number else '-' }}</td>
+                                    <td>{{ entry.competitor.first_name }} {{ entry.competitor.last_name }}</td>
+                                    
+                                    <!-- Tyre marking checkboxes -->
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="tyres_marked_practice_{{ entry.competitor_id }}" 
+                                                   id="tyres_marked_practice_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.tyres_marked_practice %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="tyres_marked_qualifying_{{ entry.competitor_id }}" 
+                                                   id="tyres_marked_qualifying_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.tyres_marked_qualifying %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Practice checkboxes -->
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="practice1_checked_{{ entry.competitor_id }}" 
+                                                   id="practice1_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.practice1_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="practice2_checked_{{ entry.competitor_id }}" 
+                                                   id="practice2_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.practice2_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="practice3_checked_{{ entry.competitor_id }}" 
+                                                   id="practice3_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.practice3_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="practice4_checked_{{ entry.competitor_id }}" 
+                                                   id="practice4_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.practice4_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Qualifying checkbox -->
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="qualifying_checked_{{ entry.competitor_id }}" 
+                                                   id="qualifying_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.qualifying_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Race checkboxes -->
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="race1_checked_{{ entry.competitor_id }}" 
+                                                   id="race1_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.race1_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="race2_checked_{{ entry.competitor_id }}" 
+                                                   id="race2_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.race2_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    <td class="checkbox-cell">
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="race3_checked_{{ entry.competitor_id }}" 
+                                                   id="race3_checked_{{ entry.competitor_id }}"
+                                                   {% if entry.tyre_checklist and entry.tyre_checklist.race3_checked %}checked{% endif %}>
+                                        </div>
+                                    </td>
+                                    
+                                    <!-- Actions -->
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-primary save-row-btn" 
+                                                data-competitor-id="{{ entry.competitor_id }}">
+                                            <i class="bi bi-save"></i> Save
+                                        </button>
+                                        <a href="#" class="btn btn-sm btn-outline-secondary" 
+                                           data-bs-toggle="modal" 
+                                           data-bs-target="#notesModal"
+                                           data-competitor-id="{{ entry.competitor_id }}"
+                                           data-competitor-name="{{ entry.competitor.first_name }} {{ entry.competitor.last_name }}"
+                                           data-notes="{{ entry.tyre_checklist.notes if entry.tyre_checklist else '' }}">
+                                            <i class="bi bi-sticky"></i> Notes
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-save"></i> Save All Changes
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-info">
+                    No competitors registered for this event yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="modal fade" id="notesModal" tabindex="-1" aria-labelledby="notesModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="notesModalLabel">Notes for <span id="competitor-name"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="notes-form" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="competitor_id" id="notes-competitor-id">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-primary">Save Notes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Handle individual row save
+            $('.save-row-btn').click(function() {
+                const competitorId = $(this).data('competitor-id');
+                
+                // Create a form with the current state of the checkboxes for this competitor
+                const form = $('<form>');
+                form.attr('method', 'POST');
+                form.attr('action', '{{ url_for("save_tyre_check_row", event_id=event.id) }}');
+                
+                // Add CSRF token
+                const csrfToken = $('<input>');
+                csrfToken.attr('type', 'hidden');
+                csrfToken.attr('name', 'csrf_token');
+                csrfToken.attr('value', '{{ csrf_token }}');
+                form.append(csrfToken);
+                
+                // Add competitor ID
+                const competitorIdInput = $('<input>');
+                competitorIdInput.attr('type', 'hidden');
+                competitorIdInput.attr('name', 'competitor_id');
+                competitorIdInput.attr('value', competitorId);
+                form.append(competitorIdInput);
+                
+                // Add all checkboxes from this row
+                const checkboxNames = [
+                    'tyres_marked_practice',
+                    'tyres_marked_qualifying',
+                    'practice1_checked',
+                    'practice2_checked',
+                    'practice3_checked',
+                    'practice4_checked',
+                    'qualifying_checked',
+                    'race1_checked',
+                    'race2_checked',
+                    'race3_checked'
+                ];
+                
+                checkboxNames.forEach(function(name) {
+                    const checkbox = $('#' + name + '_' + competitorId);
+                    const isChecked = checkbox.prop('checked');
+                    
+                    const input = $('<input>');
+                    input.attr('type', 'hidden');
+                    input.attr('name', name);
+                    input.attr('value', isChecked ? 'true' : 'false');
+                    form.append(input);
+                });
+                
+                // Submit the form
+                $('body').append(form);
+                form.submit();
+            });
+            
+            // Notes modal handling
+            $('#notesModal').on('show.bs.modal', function (event) {
+                const button = $(event.relatedTarget);
+                const competitorId = button.data('competitor-id');
+                const competitorName = button.data('competitor-name');
+                const notes = button.data('notes');
+                
+                const modal = $(this);
+                modal.find('#competitor-name').text(competitorName);
+                modal.find('#notes-competitor-id').val(competitorId);
+                modal.find('#notes').val(notes);
+                
+                // Set the form action
+                const form = modal.find('#notes-form');
+                form.attr('action', '{{ url_for("save_tyre_check_notes", event_id=event.id) }}');
+            });
+            
+            // Auto-dismiss flash messages after 5 seconds
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        });
+    </script>
+</body>
+</html> 

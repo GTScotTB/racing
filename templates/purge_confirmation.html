@@ -16,6 +16,8 @@
     </p>
     
     <form method="POST" action="{{ url_for('purge_database') }}">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <!-- The onclick attribute triggers a confirmation popup before the form is submitted. -->
       <button type="submit" class="btn-danger" onclick="return confirm('ARE YOU SURE?!');">Confirm Purge</button>
       <button type="button" class="btn-secondary" onclick="window.location.href='/'">Cancel</button>

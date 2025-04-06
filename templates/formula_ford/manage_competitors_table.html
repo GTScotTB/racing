@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Formula Ford Competitors</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .required:after {
+            content: " *";
+            color: red;
+        }
+        .add-row-btn {
+            cursor: pointer;
+        }
+        .add-row-btn:hover {
+            color: #0d6efd;
+        }
+        .competitor-row input.is-invalid {
+            border-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="text-center my-4">
+            <h1>Manage Formula Ford Competitors</h1>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2>Competitors</h2>
+                <div>
+                    <button type="button" id="addRowBtn" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add New Row
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Help message -->
+                <div class="alert alert-info mb-3">
+                    <h5><i class="bi bi-info-circle"></i> How to add new competitors:</h5>
+                    <ol>
+                        <li>Fill in all required fields (*) in the empty row(s) below.</li>
+                        <li>Click "Add New Row" to add more competitors if needed.</li>
+                        <li>Click "Save New Competitors" to submit all new entries at once.</li>
+                    </ol>
+                </div>
+                
+                <form id="competitorsForm" method="POST" action="{{ url_for('manage_formula_ford_competitors_table') }}">
+                    <!-- CSRF Token Field -->
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Car #<span class="text-danger">*</span></th>
+                                    <th>First Name<span class="text-danger">*</span></th>
+                                    <th>Last Name<span class="text-danger">*</span></th>
+                                    <th>Team</th>
+                                    <th>Vehicle Make<span class="text-danger">*</span></th>
+                                    <th>Vehicle Type<span class="text-danger">*</span></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="competitorsTableBody">
+                                <!-- Existing competitors -->
+                                {% if competitors %}
+                                    {% for competitor in competitors %}
+                                    <tr class="existing-competitor">
+                                        <td>{{ competitor.car_number }}</td>
+                                        <td>{{ competitor.first_name }}</td>
+                                        <td>{{ competitor.last_name }}</td>
+                                        <td>{{ competitor.team_association or 'N/A' }}</td>
+                                        <td>{{ competitor.vehicle_make }}</td>
+                                        <td>{{ competitor.vehicle_type }}</td>
+                                        <td>
+                                            <a href="{{ url_for('edit_formula_ford_competitor', competitor_id=competitor.id) }}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                                
+                                <!-- Template row for adding new competitors (initially empty) -->
+                                <tr id="newRowTemplate" style="display: none;" class="competitor-row">
+                                    <td>
+                                        <input type="number" name="new_car_number[]" class="form-control" placeholder="Car #" required min="1">
+                                    </td>
+                                    <td>
+                                        <input type="text" name="new_first_name[]" class="form-control" placeholder="First Name" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="new_last_name[]" class="form-control" placeholder="Last Name" required>
+                                    </td>
+                                    <td>
+                                        <input type="text" name="new_team_association[]" class="form-control" placeholder="Team">
+                                    </td>
+                                    <td>
+                                        <div class="vehicle-make-container">
+                                            <select name="vehicle_make_select[]" class="form-control vehicle-make-select" required>
+                                                <option value="" disabled selected>Select Make</option>
+                                                <option value="Spectrum">Spectrum</option>
+                                                <option value="Mygale">Mygale</option>
+                                                <option value="other">Other</option>
+                                            </select>
+                                            <input type="text" name="new_vehicle_make[]" class="form-control vehicle-make-other mt-1" placeholder="Specify make" style="display:none;">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <select name="new_vehicle_type[]" class="form-control" required>
+                                            <option value="" disabled selected>Select Type</option>
+                                            <option value="Duratec">Duratec</option>
+                                            <option value="Kent">Kent</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-row">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3 d-flex justify-content-end">
+                        <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary me-2">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <button type="button" id="directSubmitBtn" class="btn btn-success">
+                            <i class="bi bi-save"></i> Save New Competitors
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to add a new competitor row
+        function addNewRow() {
+            const template = document.getElementById('newRowTemplate');
+            const tbody = document.getElementById('competitorsTableBody');
+            
+            // Clone the template row
+            const newRow = template.cloneNode(true);
+            newRow.id = '';
+            newRow.style.display = '';
+            
+            // Add event listener to remove button
+            const removeBtn = newRow.querySelector('.remove-row');
+            removeBtn.addEventListener('click', function() {
+                newRow.remove();
+            });
+            
+            // Initialize vehicle make dropdown
+            const makeSelect = newRow.querySelector('.vehicle-make-select');
+            const makeOther = newRow.querySelector('.vehicle-make-other');
+            
+            // Reset to default state
+            makeSelect.selectedIndex = 0;
+            makeOther.value = '';
+            makeOther.style.display = 'none';
+            makeOther.required = false;
+            
+            // Add change event listener
+            makeSelect.addEventListener('change', function() {
+                if (this.value === 'other') {
+                    makeOther.style.display = 'block';
+                    makeOther.required = true;
+                    makeOther.value = ''; // Clear the field when showing it
+                } else {
+                    makeOther.style.display = 'none';
+                    makeOther.required = false;
+                    // Copy the selected value to the input
+                    makeOther.value = this.value;
+                }
+                console.log(`Make dropdown changed to: ${this.value}, setting other field to: ${makeOther.value}`);
+            });
+            
+            // Initialize vehicle type dropdown
+            const typeSelect = newRow.querySelector('select[name="new_vehicle_type[]"]');
+            typeSelect.selectedIndex = 0;
+            
+            // Add the new row to the table
+            tbody.appendChild(newRow);
+            
+            // Clear all fields
+            newRow.querySelectorAll('input[type="text"], input[type="number"]').forEach(input => {
+                input.value = '';
+            });
+            
+            // Focus the first input in the new row
+            const firstInput = newRow.querySelector('input');
+            if (firstInput) {
+                firstInput.focus();
+            }
+            
+            console.log('New row added and initialized');
+            return newRow;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('competitorsForm');
+            const saveButton = document.getElementById('directSubmitBtn');
+            
+            // Clear any existing rows first before adding a new one
+            const existingRows = document.querySelectorAll('.competitor-row:not(#newRowTemplate)');
+            existingRows.forEach(row => row.remove());
+            
+            // Add at least one row by default
+            addNewRow();
+            console.log('Added one empty row for data entry');
+            
+            // Set up handlers for all vehicle make dropdowns (including the newly added row)
+            setupVehicleMakeDropdowns();
+            
+            // Add button click handler for adding new rows
+            document.getElementById('addRowBtn').addEventListener('click', function() {
+                addNewRow();
+                setupVehicleMakeDropdowns(); // Setup handlers for the newly added row
+            });
+            
+            // Function to set up all vehicle make dropdowns
+            function setupVehicleMakeDropdowns() {
+                document.querySelectorAll('.vehicle-make-select').forEach(function(dropdown) {
+                    const container = dropdown.closest('.vehicle-make-container');
+                    const otherField = container.querySelector('.vehicle-make-other');
+                    
+                    dropdown.addEventListener('change', function() {
+                        if (this.value === 'other') {
+                            otherField.style.display = 'block';
+                            otherField.required = true;
+                            otherField.value = ''; // Clear the field when showing it
+                        } else {
+                            otherField.style.display = 'none';
+                            otherField.required = false;
+                            otherField.value = this.value; // Set the value to match the dropdown
+                        }
+                    });
+                });
+            }
+            
+            // Save button handler with improved validation
+            saveButton.addEventListener('click', function() {
+                // Create status indicator
+                const statusDiv = document.createElement('div');
+                statusDiv.className = 'alert alert-info fixed-top m-3';
+                statusDiv.innerHTML = '<strong>Saving competitors...</strong>';
+                document.body.appendChild(statusDiv);
+                
+                // Visual feedback on button
+                saveButton.innerHTML = '<i class="bi bi-hourglass"></i> Processing...';
+                saveButton.disabled = true;
+                
+                // COMPLETELY NEW APPROACH: Create a FormData object manually
+                // rather than using the whole form
+                const formData = new FormData();
+                
+                // Add CSRF token
+                formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                
+                // Get all the visible rows
+                const rows = document.querySelectorAll('.competitor-row:not(#newRowTemplate)');
+                console.log(`Processing ${rows.length} rows...`);
+                
+                let validRows = 0;
+                
+                // Process each row separately
+                rows.forEach((row, index) => {
+                    console.log(`Checking row ${index+1}`);
+                    
+                    // Process vehicle make selection first
+                    const makeSelect = row.querySelector('.vehicle-make-select');
+                    const makeInput = row.querySelector('.vehicle-make-other');
+                    
+                    if (makeSelect && makeInput) {
+                        if (makeSelect.value === 'other') {
+                            if (!makeInput.value.trim()) {
+                                makeInput.value = 'Unknown'; // Fallback value
+                            }
+                            console.log(`Row ${index+1}: Using "Other" make: ${makeInput.value}`);
+                        } else if (makeSelect.value) {
+                            makeInput.value = makeSelect.value;
+                            console.log(`Row ${index+1}: Using selected make: ${makeSelect.value}`);
+                        }
+                    }
+                    
+                    // Check if all required fields are filled
+                    const requiredFields = row.querySelectorAll('input[required], select[required]');
+                    let rowIsValid = true;
+                    
+                    requiredFields.forEach(field => {
+                        if (!field.value.trim()) {
+                            rowIsValid = false;
+                            field.classList.add('is-invalid');
+                            console.log(`Row ${index+1}: Missing required field: ${field.name}`);
+                        } else {
+                            field.classList.remove('is-invalid');
+                        }
+                    });
+                    
+                    if (!rowIsValid) {
+                        console.log(`Row ${index+1}: Skipping invalid row`);
+                        return; // Skip this row
+                    }
+                    
+                    // Collect data from this row only
+                    const carNumber = row.querySelector('input[name="new_car_number[]"]').value;
+                    const firstName = row.querySelector('input[name="new_first_name[]"]').value;
+                    const lastName = row.querySelector('input[name="new_last_name[]"]').value;
+                    const team = row.querySelector('input[name="new_team_association[]"]').value;
+                    const vehicleMake = row.querySelector('input[name="new_vehicle_make[]"]').value;
+                    const vehicleType = row.querySelector('select[name="new_vehicle_type[]"]').value;
+                    
+                    console.log(`Row ${index+1} DATA: ${firstName} ${lastName}, Car #${carNumber}, ${vehicleMake} ${vehicleType}`);
+                    
+                    // Add this row's data to formData
+                    formData.append('new_car_number[]', carNumber);
+                    formData.append('new_first_name[]', firstName);
+                    formData.append('new_last_name[]', lastName);
+                    formData.append('new_team_association[]', team);
+                    formData.append('new_vehicle_make[]', vehicleMake);
+                    formData.append('vehicle_make_select[]', makeSelect.value);
+                    formData.append('new_vehicle_type[]', vehicleType);
+                    
+                    validRows++;
+                    console.log(`Row ${index+1}: Valid and added to submission`);
+                });
+                
+                if (validRows === 0) {
+                    statusDiv.className = 'alert alert-warning fixed-top m-3';
+                    statusDiv.innerHTML = `
+                        <button type="button" class="btn-close float-end" 
+                                onclick="this.parentNode.remove()"></button>
+                        <strong>Warning:</strong> Please fill in all required fields for at least one competitor.
+                    `;
+                    
+                    // Reset button
+                    saveButton.innerHTML = '<i class="bi bi-save"></i> Save New Competitors';
+                    saveButton.disabled = false;
+                    return;
+                }
+                
+                console.log(`Submitting ${validRows} valid rows`);
+                
+                // Debug what's being sent
+                console.log("Form data being sent:");
+                for(let pair of formData.entries()) {
+                    console.log(pair[0] + ': ' + pair[1]);
+                }
+                
+                // Send via fetch API
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                })
+                .then(response => {
+                    statusDiv.innerHTML += `<div>Response status: ${response.status}</div>`;
+                    return response.text();
+                })
+                .then(text => {
+                    try {
+                        const result = JSON.parse(text);
+                        statusDiv.className = 'alert alert-' + (result.status === 'success' ? 'success' : 'warning') + ' fixed-top m-3';
+                        statusDiv.innerHTML = `
+                            <button type="button" class="btn-close float-end" 
+                                    onclick="this.parentNode.remove()"></button>
+                            <strong>${result.status === 'success' ? 'Success!' : 'Warning:'}</strong> ${result.message}
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
+                                    Reload Page
+                                </button>
+                            </div>
+                        `;
+                    } catch (e) {
+                        statusDiv.className = 'alert alert-warning fixed-top m-3';
+                        statusDiv.innerHTML = `
+                            <button type="button" class="btn-close float-end" 
+                                    onclick="this.parentNode.remove()"></button>
+                            <strong>Warning:</strong> Response not in expected format.
+                            <pre>${text}</pre>
+                            <div class="mt-2">
+                                <button class="btn btn-sm btn-primary" onclick="window.location.reload()">
+                                    Reload Page
+                                </button>
+                            </div>
+                        `;
+                    }
+                    
+                    // Reset button
+                    saveButton.innerHTML = '<i class="bi bi-save"></i> Save New Competitors';
+                    saveButton.disabled = false;
+                })
+                .catch(error => {
+                    statusDiv.className = 'alert alert-danger fixed-top m-3';
+                    statusDiv.innerHTML = `
+                        <button type="button" class="btn-close float-end" 
+                                onclick="this.parentNode.remove()"></button>
+                        <strong>Error:</strong> ${error.message}
+                    `;
+                    
+                    // Reset button
+                    saveButton.innerHTML = '<i class="bi bi-save"></i> Save New Competitors';
+                    saveButton.disabled = false;
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

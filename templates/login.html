@@ -13,6 +13,13 @@
 
   <section id="login-section">
     <form action="{{ url_for('login') }}" method="POST" id="login-form">
+      <!-- 
+        CSRF Token Field: This hidden input contains a unique token that helps prevent
+        Cross-Site Request Forgery attacks. The server will validate this token when
+        the form is submitted to ensure the request is legitimate.
+      -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      
       <div>
         <label for="username">Username:</label>
         <input type="text" id="username" name="username" required>

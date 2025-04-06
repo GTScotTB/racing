@@ -10,6 +10,8 @@
             <h1>Map Database Fields to CSV Columns</h1>
         </header>
         <form action="{{ url_for('preview_data') }}" method="POST" id="mappingForm">
+    <!-- CSRF token for security -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <!-- Store the raw data as stringified JSON -->
             <input type="hidden" id="rawCsvData" name="raw_csv_data" value="">
             <input type="hidden" id="rawCsvHeaders" name="raw_csv_headers" value="">
