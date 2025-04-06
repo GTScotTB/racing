@@ -2660,7 +2660,7 @@ def save_all_garage_numbers(event_id):
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run the Flask application')
-    parser.add_argument('--port', type=int, default=5004, help='Port to listen on (default: 5004)')
+    parser.add_argument('--port', type=int, default=5000, help='Port to listen on (default: 5000)')
     args = parser.parse_args()
     
     app.run(host='0.0.0.0', debug=True, port=args.port)
