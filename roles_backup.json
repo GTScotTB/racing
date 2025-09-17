@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "role_name": "Scrutineer"
+    },
+    {
+        "id": 2,
+        "role_name": "Race Official"
+    },
+    {
+        "id": 3,
+        "role_name": "Admin"
+    },
+    {
+        "id": 4,
+        "role_name": "Volunteer"
+    }
+]

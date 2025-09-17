@@ -1,0 +1,41 @@
+[
+    {
+        "id": 2,
+        "event_id": 1,
+        "competitor_id": 3,
+        "qual_weight": 455.0,
+        "qual_height": "",
+        "r1_weight": null,
+        "r1_height": "",
+        "r2_weight": null,
+        "r2_height": "",
+        "r3_weight": null,
+        "r3_height": ""
+    },
+    {
+        "id": 3,
+        "event_id": 1,
+        "competitor_id": 6,
+        "qual_weight": 233.0,
+        "qual_height": "",
+        "r1_weight": null,
+        "r1_height": "",
+        "r2_weight": null,
+        "r2_height": "",
+        "r3_weight": null,
+        "r3_height": ""
+    },
+    {
+        "id": 4,
+        "event_id": 1,
+        "competitor_id": 4,
+        "qual_weight": 332.0,
+        "qual_height": "",
+        "r1_weight": null,
+        "r1_height": "",
+        "r2_weight": null,
+        "r2_height": "",
+        "r3_weight": null,
+        "r3_height": ""
+    }
+]

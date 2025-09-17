@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "name": "Scott Black",
+        "role": "Scrutineer",
+        "contact_info": "0426267716",
+        "licence_number": "146554"
+    },
+    {
+        "id": 3,
+        "name": "Darvo",
+        "role": "Scrutineer",
+        "contact_info": "1800-go-away",
+        "licence_number": "12345"
+    }
+]

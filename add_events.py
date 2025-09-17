@@ -58,7 +58,7 @@ def update_formula_ford_event():
     location = request.form.get('location')
     date = request.form.get('date')
 
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     event.location = location
     event.event_date = date
 

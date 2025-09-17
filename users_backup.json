@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "username": "admin1",
+        "password": "$2b$12$/F5CngHX9yIhjmDm/MlwBOGqIABz0kk1eSIvSlF1WYrUSXW2T1OC2",
+        "role": "admin"
+    },
+    {
+        "id": 2,
+        "username": "user1",
+        "password": "$2b$12$zs82WRwj6azPmhWZYJbsI.nEFuJFDOIVki0X4ssu107pI9PsTZgym",
+        "role": "user"
+    },
+    {
+        "id": 3,
+        "username": "admin",
+        "password": "scrypt:32768:8:1$2TIYugkqS0htTNvv$69dbb9fb9f7663b44e107cc2b64db938da1610a9d6961a769930366f7ade89e4e06a62d253a15b26b2b26e323f806d36eb6448598bb21114de322c0f93aa8f0b",
+        "role": "admin"
+    }
+]

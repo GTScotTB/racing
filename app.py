@@ -71,7 +71,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'  # Redirect to login page if not authenticated
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))  # Fetch user by ID
+    return db.session.get(User, int(user_id))  # Fetch user by ID
 
 # Initialize SQLAlchemy with Flask
 db.init_app(app)
@@ -413,13 +413,13 @@ def view_checklist():
 
     elif request.method == 'GET':
         checklist_id = request.args.get('checklist_id')  # Get checklist_id from query parameters
-        checklist = db.session.get(InspectionChecklist, checklist_id)
+        checklist = db.session.get(InspectionChecklist, int(checklist_id)) if checklist_id else None
 
         if not checklist:
             return jsonify({'error': "Checklist not found!"}), 404
 
         # Fetch associated entry
-        entry = Entry.query.get(checklist.entry_id)
+        entry = db.session.get(Entry, checklist.entry_id)
         items = InspectionItem.query.filter_by(checklist_id=checklist.id).all()
        
 
@@ -497,13 +497,13 @@ def view_checklist2():
     elif request.method == 'GET':
         # Handle GET request: Fetch checklist based on checklist_id
         checklist_id = request.args.get('checklist_id')  # Get checklist_id from query parameters
-        checklist = InspectionChecklist.query.get(checklist_id)
+        checklist = db.session.get(InspectionChecklist, int(checklist_id)) if checklist_id else None
 
         if not checklist:
             return jsonify({'error': "Checklist not found!"}), 404
 
         # Fetch associated entry
-        entry = Entry.query.get(checklist.entry_id)
+        entry = db.session.get(Entry, checklist.entry_id)
         items = InspectionItem.query.filter_by(checklist_id=checklist.id).all()
 
         return render_template(
@@ -1608,7 +1608,7 @@ def add_formula_ford_event():
 @app.route('/formula_ford/events/<int:event_id>/competitors')
 @login_required
 def event_competitors(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     
     # Get all competitors currently in this event
@@ -1623,7 +1623,7 @@ def event_competitors(event_id):
     # Load competitor data for each entry and build a list of competitors in this event
     competitors = []
     for entry in entries:
-        competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         competitor.entry_id = entry.id  # Attach entry ID to competitor
         competitor.entry_status = entry.entry_status
         competitor.weekend_car_number = entry.weekend_car_number
@@ -1653,7 +1653,7 @@ def event_competitors(event_id):
 @app.route('/formula_ford/events/<int:event_id>/competitors/add', methods=['POST'])
 @login_required
 def add_formula_ford_event_competitor(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     competitor_id = request.form.get('competitor_id')
     weekend_car_number = request.form.get('weekend_car_number')
     FFgarage_number = request.form.get('FFgarage_number')
@@ -1670,7 +1670,7 @@ def add_formula_ford_event_competitor(event_id):
     else:
         # If no weekend car number provided, use the competitor's regular car number
         if not weekend_car_number or not weekend_car_number.strip():
-            competitor = FormulaFordCompetitor.query.get(competitor_id)
+            competitor = db.session.get(FormulaFordCompetitor, competitor_id)
             if competitor:
                 weekend_car_number = str(competitor.car_number)
         
@@ -1802,13 +1802,13 @@ def save_all_weight_height(event_id):
 @app.route('/formula_ford/events/<int:event_id>/technical_check')
 @login_required
 def technical_check(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     check_type = request.args.get('check_type', 'ecu')
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     
     # For each entry, load the competitor data
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         
         # Load any existing check for this competitor
         check = TechnicalCheck.query.filter_by(
@@ -1817,6 +1817,17 @@ def technical_check(event_id):
             check_type=check_type
         ).first()
         
+        # If a check exists, parse the result for display in the template.
+        # This needs to be specific to the check_type being loaded.
+        if check and check.result:
+            if check_type == 'ecu':
+                # Use regex to find number and tune, handling missing values.
+                num_match = re.search(r'Number:\s*([^,]+)', check.result)
+                tune_match = re.search(r'Tune:\s*(.*)', check.result)
+                check.ecu_number = num_match.group(1).strip() if num_match else ''
+                check.ecu_tune = tune_match.group(1).strip() if tune_match else ''
+            elif check_type == 'engine':
+                check.engine_number = check.result
         entry.check = check
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
@@ -1901,12 +1912,12 @@ def save_technical_check(event_id):
 @app.route('/formula_ford/events/<int:event_id>/weight_height_tracking')
 @login_required
 def weight_height_tracking(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     
     # Load competitor data and weight/height records
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         entry.weight_height = CompetitorWeightHeight.query.filter_by(
             event_id=event_id,
             competitor_id=entry.competitor_id
@@ -1935,7 +1946,7 @@ def weight_height_tracking(event_id):
 @app.route('/formula_ford/events/<int:event_id>/technical_requirements')
 @login_required
 def event_technical_requirements(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     requirements = EventTechnicalRequirements.query.filter_by(event_id=event_id).first()
     
     return render_template('formula_ford/technical_requirements.html',
@@ -1945,7 +1956,7 @@ def event_technical_requirements(event_id):
 @app.route('/formula_ford/events/<int:event_id>/technical_checks')
 @login_required
 def event_technical_checks(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     
     # Get all technical checks for this event
     technical_checks = TechnicalCheck.query.filter_by(event_id=event_id).all()
@@ -1960,7 +1971,7 @@ def event_technical_checks(event_id):
     # Get all competitors in this event
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         entry.checks = checks_by_competitor.get(entry.competitor_id, [])
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
@@ -1986,7 +1997,7 @@ def event_technical_checks(event_id):
 @app.route('/formula_ford/events/<int:event_id>/tyre_requirements')
 @login_required
 def event_tyre_requirements(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     requirements = EventTyreRequirements.query.filter_by(event_id=event_id).first()
     
     return render_template('formula_ford/tyre_requirements.html',
@@ -1996,7 +2007,7 @@ def event_tyre_requirements(event_id):
 @app.route('/formula_ford/events/<int:event_id>/technical_records')
 @login_required
 def event_technical_records(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     
     # Get all technical records for this event
     records = TechnicalCheck.query.filter_by(event_id=event_id).all()
@@ -2011,7 +2022,7 @@ def event_technical_records(event_id):
     # Get all competitors in this event
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         entry.records = records_by_competitor.get(entry.competitor_id, [])
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
@@ -2037,7 +2048,7 @@ def event_technical_records(event_id):
 @app.route('/formula_ford/events/<int:event_id>/tyre_records')
 @login_required
 def event_tyre_records(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     
     # Get all tyre records for this event
     records = FormulaFordTyreCheck.query.filter_by(event_id=event_id).all()
@@ -2052,7 +2063,7 @@ def event_tyre_records(event_id):
     # Get all competitors in this event
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         entry.records = records_by_competitor.get(entry.competitor_id, [])
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
@@ -2079,32 +2090,55 @@ def event_tyre_records(event_id):
 @login_required
 def save_all_technical_checks(event_id):
     check_type = request.form.get('check_type')
-    competitor_ids = request.form.getlist('competitor_id')
     saved_count = 0
+
+    # --- FIX: Dynamically find competitor IDs from submitted form data ---
+    # Create a set of unique competitor IDs from the form keys.
+    # e.g., 'ecu_number_5' -> '5', 'notes_5' -> '5'. The set will store '5' only once.
+    competitor_ids = set()
+    for key in request.form:
+        # --- FIX: Explicitly skip metadata fields to avoid parsing errors ---
+        if key in ['csrf_token', 'check_type', 'other_check_name']:
+            continue
+        if '_' in key: # Only process keys that are expected to contain an ID
+            parts = key.split('_')
+            if parts[-1].isdigit():
+                competitor_ids.add(parts[-1])
     
     for competitor_id in competitor_ids:
         # Get the result based on the check type
-        result = None
+        result = ''
+        notes = request.form.get(f'notes_{competitor_id}', '').strip()
+        has_data = False
+
         if check_type == 'weight':
             weight = request.form.get(f'weight_{competitor_id}', '')
             result = weight
+            if weight: has_data = True
         elif check_type == 'ecu':
             ecu_number = request.form.get(f'ecu_number_{competitor_id}', '')
             ecu_tune = request.form.get(f'ecu_tune_{competitor_id}', '')
-            result = f"Number: {ecu_number}, Tune: {ecu_tune}"
+            if ecu_number or ecu_tune:
+                result = f"Number: {ecu_number}, Tune: {ecu_tune}"
+                has_data = True
         elif check_type == 'engine':
             result = request.form.get(f'engine_number_{competitor_id}', '')
+            if result: has_data = True
         elif check_type == 'other':
             other_check_name = request.form.get('other_check_name', '')
             other_status = request.form.get(f'other_status_{competitor_id}', '')
-            result = f"{other_check_name}: {other_status}"
+            # Only create a result if both name and status are present
+            if other_check_name and other_status:
+                result = f"{other_check_name}: {other_status}"
+                has_data = True
+            else:
+                result = '' # Ensure result is empty if no data
         else:
             result = request.form.get(f'{check_type}_status_{competitor_id}', '')
-        
-        notes = request.form.get(f'notes_{competitor_id}', '').strip()
+            if result: has_data = True
         
         # Skip if no meaningful data for this competitor
-        if not result and not notes:
+        if not has_data and not notes:
             continue
             
         # Check if record already exists
@@ -2172,7 +2206,7 @@ def get_other_check_names(event_id):
 def update_formula_ford_event():
     try:
         event_id = request.form.get('event_id')
-        event = FormulaFordEvent.query.get_or_404(event_id)
+        event = db.session.get(FormulaFordEvent, event_id) or abort(404)
         
         # Update fields
         event.location = request.form.get('location')
@@ -2306,9 +2340,9 @@ def add_formula_ford_competitor():
 @app.route('/formula_ford/events/<int:event_id>/entries/<int:entry_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_event_entry(event_id, entry_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
-    entry = FormulaFordEventEntry.query.get_or_404(entry_id)
-    competitor = FormulaFordCompetitor.query.get_or_404(entry.competitor_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
+    entry = db.session.get(FormulaFordEventEntry, entry_id) or abort(404)
+    competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id) or abort(404)
     
     if request.method == 'POST':
         entry_status = request.form.get('entry_status')
@@ -2341,7 +2375,7 @@ def edit_event_entry(event_id, entry_id):
 @login_required
 def delete_event_entry(event_id, entry_id):
     try:
-        entry = FormulaFordEventEntry.query.get_or_404(entry_id)
+        entry = db.session.get(FormulaFordEventEntry, entry_id) or abort(404)
         db.session.delete(entry)
         db.session.commit()
         flash('Entry deleted successfully', 'success')
@@ -2417,14 +2451,14 @@ def delete_formula_ford_competitor(competitor_id):
 @app.route('/formula-ford/event/<int:event_id>/tyre-checklist')
 @login_required
 def formula_ford_tyre_checklist(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     
     # Get all entries for this event
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     
     # Load competitor data for each entry
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         
         # Check if there's already a tyre checklist record
         entry.tyre_checklist = TyreChecklist.query.filter_by(
@@ -2457,7 +2491,7 @@ def formula_ford_tyre_checklist(event_id):
 @app.route('/formula-ford/event/<int:event_id>/tyre-checklist/save-row', methods=['POST'])
 @login_required
 def save_tyre_check_row(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     competitor_id = request.form.get('competitor_id')
     
     if not competitor_id:
@@ -2501,7 +2535,7 @@ def save_tyre_check_row(event_id):
 @app.route('/formula-ford/event/<int:event_id>/tyre-checklist/save-all', methods=['POST'])
 @login_required
 def save_all_tyre_checks(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     
     # Get all entries for this event
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
@@ -2553,7 +2587,7 @@ def save_all_tyre_checks(event_id):
 @app.route('/formula-ford/event/<int:event_id>/tyre-checklist/save-notes', methods=['POST'])
 @login_required
 def save_tyre_check_notes(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     competitor_id = request.form.get('competitor_id')
     notes = request.form.get('notes', '')
     
@@ -2589,14 +2623,14 @@ def save_tyre_check_notes(event_id):
 @app.route('/formula_ford/events/<int:event_id>/garage_numbers')
 @login_required
 def formula_ford_garage_numbers(event_id):
-    event = FormulaFordEvent.query.get_or_404(event_id)
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     
     # Get all entries for this event
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     
     # Load competitor data for each entry
     for entry in entries:
-        entry.competitor = FormulaFordCompetitor.query.get(entry.competitor_id)
+        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
     def numeric_sort_key(entry):
@@ -2629,7 +2663,7 @@ def save_garage_number_row(event_id):
         return redirect(url_for('formula_ford_garage_numbers', event_id=event_id))
     
     # Find the entry
-    entry = FormulaFordEventEntry.query.get_or_404(entry_id)
+    entry = db.session.get(FormulaFordEventEntry, entry_id) or abort(404)
     
     # Update garage number
     entry.FFgarage_number = garage_number
@@ -2664,4 +2698,3 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     app.run(host='0.0.0.0', debug=True, port=args.port)
-

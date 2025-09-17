@@ -1,0 +1,44 @@
+[
+    {
+        "id": 1,
+        "round_number": 1,
+        "location": "Phillip Island",
+        "event_date": "2024-05-16"
+    },
+    {
+        "id": 2,
+        "round_number": 2,
+        "location": "New Event",
+        "event_date": "2024-06-06"
+    },
+    {
+        "id": 3,
+        "round_number": 3,
+        "location": "Round 3",
+        "event_date": "2024-07-25"
+    },
+    {
+        "id": 4,
+        "round_number": 4,
+        "location": "Round 4",
+        "event_date": "2024-08-22"
+    },
+    {
+        "id": 5,
+        "round_number": 5,
+        "location": "Round 5",
+        "event_date": "2024-09-19"
+    },
+    {
+        "id": 6,
+        "round_number": 6,
+        "location": "Round 6",
+        "event_date": "2024-10-03"
+    },
+    {
+        "id": 7,
+        "round_number": 7,
+        "location": "Dunno",
+        "event_date": "2024-10-12"
+    }
+]
