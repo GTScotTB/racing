@@ -1860,21 +1860,21 @@ def save_technical_check(event_id):
     # Get the result based on the check type
     result = ''
     if check_type == 'weight':
-        result = request.form.get('weight', '')
+        result = request.form.get(f'weight_{competitor_id}', '')
     elif check_type == 'ecu':
-        ecu_number = request.form.get('ecu_number', '')
-        ecu_tune = request.form.get('ecu_tune', '')
+        ecu_number = request.form.get(f'ecu_number_{competitor_id}', '')
+        ecu_tune = request.form.get(f'ecu_tune_{competitor_id}', '')
         result = f"Number: {ecu_number}, Tune: {ecu_tune}"
     elif check_type == 'engine':
-        result = request.form.get('engine_number', '')
+        result = request.form.get(f'engine_number_{competitor_id}', '')
     elif check_type == 'other':
         other_check_name = request.form.get('other_check_name', '')
-        other_status = request.form.get('other_status', '')
+        other_status = request.form.get(f'other_status_{competitor_id}', '')
         result = f"{other_check_name}: {other_status}"
     else:
-        result = request.form.get(f'{check_type}_status', '') # Use the specific status name
+        result = request.form.get(f'{check_type}_status_{competitor_id}', '') # Use the specific status name
     
-    notes = request.form.get('notes', '').strip()
+    notes = request.form.get(f'notes_{competitor_id}', '').strip()
     
     # Check if record already exists
     record = TechnicalCheck.query.filter_by(
