@@ -122,59 +122,40 @@
                     <tbody>
                         {% for entry in entries %}
                         <tr>
-                            <form method="POST" action="{{ url_for('save_technical_check', event_id=event.id) }}">
-                                <input type="hidden" name="competitor_id" value="{{ entry.competitor_id }}">
-                                <input type="hidden" name="check_type" value="{{ check_type }}">
-                                <td>{{ entry.competitor.car_number }}</td>
-                                <td>{{ entry.weekend_car_number if entry.weekend_car_number else "-" }}</td>
-                                <td>{{ entry.competitor.name }}</td>
+                            <td>{{ entry.competitor.car_number }}</td>
+                            <td>{{ entry.weekend_car_number if entry.weekend_car_number else "-" }}</td>
+                            <td>{{ entry.competitor.first_name }} {{ entry.competitor.last_name }}</td>
+                            
+                            {% if check_type == 'weight' %}
+                                <td><input type="text" name="weight_{{ entry.competitor_id }}" class="form-control" value="{{ entry.check.result if entry.check else '' }}"></td>
+                            {% elif check_type == 'ecu' %}
+                                <td><input type="text" name="ecu_number_{{ entry.competitor_id }}" class="form-control" value="{{ entry.check.ecu_number if entry.check else '' }}"></td>
+                                <td><input type="text" name="ecu_tune_{{ entry.competitor_id }}" class="form-control" value="{{ entry.check.ecu_tune if entry.check else '' }}"></td>
+                            {% elif check_type == 'engine' %}
+                                <td><input type="text" name="engine_number_{{ entry.competitor_id }}" class="form-control" value="{{ entry.check.engine_number if entry.check else '' }}"></td>
+                            {% elif check_type == 'other' %}
                                 <td>
-                                    {% if check_type == 'weight' %}
-                                        <input type="text" name="weight" class="form-control weight-input" value="{{ entry.competitor_check.result if entry.competitor_check else '' }}">
-                                    {% elif check_type == 'ecu' %}
-                                        {% set ecu_data = entry.competitor_check.result.split(', ') if entry.competitor_check and entry.competitor_check.result else ['Number: ', 'Tune: '] %}
-                                        {% set ecu_number = ecu_data[0].replace('Number: ', '') if ecu_data|length > 0 else '' %}
-                                        {% set ecu_tune = ecu_data[1].replace('Tune: ', '') if ecu_data|length > 1 else '' %}
-                                        <div class="mb-2">
-                                            <label>ECU Number:</label>
-                                            <input type="text" name="ecu_number" class="form-control" value="{{ ecu_number }}">
-                                        </div>
-                                        <div>
-                                            <label>ECU Tune:</label>
-                                            <input type="text" name="ecu_tune" class="form-control" value="{{ ecu_tune }}">
-                                        </div>
-                                    {% elif check_type == 'engine' %}
-                                        <input type="text" name="engine_number" class="form-control" value="{{ entry.competitor_check.result if entry.competitor_check else '' }}">
-                                    {% elif check_type == 'other' %}
-                                        <div class="mb-2">
-                                            <label>Check Name:</label>
-                                            {% set check_name = '' %}
-                                            {% if entry.competitor_check and entry.competitor_check.result and ':' in entry.competitor_check.result %}
-                                                {% set check_name = entry.competitor_check.result.split(':')[0] %}
-                                            {% endif %}
-                                            <input type="text" name="other_check_name" class="form-control check-name-input" 
-                                                value="{{ check_name }}" list="previous_check_names">
-                                        </div>
-                                        <div>
-                                            <label>Status:</label>
-                                            <input type="text" name="other_status" class="form-control" value="{{ entry.competitor_check.result.split(':')[1].strip() if entry.competitor_check and entry.competitor_check.result and ':' in entry.competitor_check.result else '' }}">
-                                        </div>
-                                    {% else %}
-                                        <select name="{{ check_type }}_status" class="form-select">
-                                            <option value="" {% if not entry.competitor_check or not entry.competitor_check.result %}selected{% endif %}>-- Select --</option>
-                                            <option value="Pass" {% if entry.competitor_check and entry.competitor_check.result == 'Pass' %}selected{% endif %}>Pass</option>
-                                            <option value="Fail" {% if entry.competitor_check and entry.competitor_check.result == 'Fail' %}selected{% endif %}>Fail</option>
-                                            <option value="Pending" {% if entry.competitor_check and entry.competitor_check.result == 'Pending' %}selected{% endif %}>Pending</option>
-                                        </select>
-                                    {% endif %}
+                                    <input type="text" name="other_status_{{ entry.competitor_id }}" class="form-control" value="{{ entry.check.result.split(':')[1].strip() if entry.check and entry.check.result and ':' in entry.check.result else '' }}">
                                 </td>
+                            {% else %}
                                 <td>
-                                    <textarea name="notes" class="form-control" rows="2">{{ entry.competitor_check.notes if entry.competitor_check else '' }}</textarea>
+                                    <select name="{{ check_type }}_status_{{ entry.competitor_id }}" class="form-select">
+                                        <option value="" {% if not entry.check or not entry.check.result %}selected{% endif %}>-- Select --</option>
+                                        <option value="Pass" {% if entry.check and entry.check.result == 'Pass' %}selected{% endif %}>Pass</option>
+                                        <option value="Fail" {% if entry.check and entry.check.result == 'Fail' %}selected{% endif %}>Fail</option>
+                                        <option value="Pending" {% if entry.check and entry.check.result == 'Pending' %}selected{% endif %}>Pending</option>
+                                    </select>
                                 </td>
-                                <td>
-                                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
-                                </td>
-                            </form>
+                            {% endif %}
+                            
+                            <td>
+                                <textarea name="notes_{{ entry.competitor_id }}" class="form-control" rows="2">{{ entry.check.notes if entry.check else '' }}</textarea>
+                            </td>
+                            <td>
+                                <button type="submit" class="btn btn-sm btn-primary" 
+                                        formaction="{{ url_for('save_technical_check', event_id=event.id) }}"
+                                        name="competitor_id" value="{{ entry.competitor_id }}">Save</button>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

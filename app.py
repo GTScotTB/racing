@@ -1855,10 +1855,10 @@ def technical_check(event_id):
 @login_required
 def save_technical_check(event_id):
     competitor_id = request.form.get('competitor_id')
-    check_type = request.form.get('check_type')
+    check_type = request.form.get('check_type') # This will be 'ecu', 'engine', etc.
     
     # Get the result based on the check type
-    result = None
+    result = ''
     if check_type == 'weight':
         result = request.form.get('weight', '')
     elif check_type == 'ecu':
@@ -1872,7 +1872,7 @@ def save_technical_check(event_id):
         other_status = request.form.get('other_status', '')
         result = f"{other_check_name}: {other_status}"
     else:
-        result = request.form.get(f'{check_type}_status', '')
+        result = request.form.get(f'{check_type}_status', '') # Use the specific status name
     
     notes = request.form.get('notes', '').strip()
     
@@ -2089,6 +2089,9 @@ def event_tyre_records(event_id):
 @app.route('/formula_ford/events/<int:event_id>/technical_check/save_all', methods=['POST'])
 @login_required
 def save_all_technical_checks(event_id):
+    print("\n--- DEBUG: save_all_technical_checks ---")
+    print(f"Received form data: {request.form}")
+
     check_type = request.form.get('check_type')
     saved_count = 0
 
@@ -2105,11 +2108,15 @@ def save_all_technical_checks(event_id):
             if parts[-1].isdigit():
                 competitor_ids.add(parts[-1])
     
+    print(f"Found competitor IDs in form: {competitor_ids}")
+    
     for competitor_id in competitor_ids:
         # Get the result based on the check type
         result = ''
         notes = request.form.get(f'notes_{competitor_id}', '').strip()
         has_data = False
+
+        print(f"\nProcessing competitor_id: {competitor_id}")
 
         if check_type == 'weight':
             weight = request.form.get(f'weight_{competitor_id}', '')
@@ -2134,11 +2141,15 @@ def save_all_technical_checks(event_id):
             else:
                 result = '' # Ensure result is empty if no data
         else:
-            result = request.form.get(f'{check_type}_status_{competitor_id}', '')
+            result = request.form.get(f'{check_type}_status_{competitor_id}', '') # Correctly formatted name
             if result: has_data = True
+
+        print(f"  - Result string: '{result}'")
+        print(f"  - Notes: '{notes}'")
         
         # Skip if no meaningful data for this competitor
         if not has_data and not notes:
+            print("  - SKIPPING: No data or notes found.")
             continue
             
         # Check if record already exists
@@ -2148,6 +2159,7 @@ def save_all_technical_checks(event_id):
             check_type=check_type
         ).first()
         
+        print(f"  - Existing record found: {record is not None}")
         if record:
             record.result = result
             record.notes = notes
@@ -2167,12 +2179,14 @@ def save_all_technical_checks(event_id):
         
         saved_count += 1
     
+    print(f"Total saved count: {saved_count}")
     try:
         db.session.commit()
         flash(f'{saved_count} {check_type.replace("_", " ").title()} checks saved successfully', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error saving checks: {str(e)}', 'error')
+    print("--- DEBUG END ---\n")
     
     return redirect(url_for('technical_check', event_id=event_id, check_type=check_type))
 
