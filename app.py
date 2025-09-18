@@ -1805,30 +1805,45 @@ def save_all_weight_height(event_id):
 def technical_check(event_id):
     event = db.session.get(FormulaFordEvent, event_id) or abort(404)
     check_type = request.args.get('check_type', 'ecu')
+    other_check_name = request.args.get('other_check_name', '').strip()
     entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
     
     # For each entry, load the competitor data
     for entry in entries:
         entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
         
-        # Load any existing check for this competitor
-        check = TechnicalCheck.query.filter_by(
-            event_id=event_id,
-            competitor_id=entry.competitor_id,
-            check_type=check_type
-        ).first()
+        check = None
+        if check_type == 'other':
+            if other_check_name:
+                # Find a specific "other" check by name for this competitor
+                # We search for results starting with the check name + ':'
+                check = TechnicalCheck.query.filter(
+                    TechnicalCheck.event_id == event_id,
+                    TechnicalCheck.competitor_id == entry.competitor_id,
+                    TechnicalCheck.check_type == 'other',
+                    TechnicalCheck.result.like(f"{other_check_name}:%")
+                ).first()
+        else:
+            # Load any existing check for this competitor for non-'other' types
+            check = TechnicalCheck.query.filter_by(
+                event_id=event_id,
+                competitor_id=entry.competitor_id,
+                check_type=check_type
+            ).first()
         
         # If a check exists, parse the result for display in the template.
-        # This needs to be specific to the check_type being loaded.
         if check and check.result:
             if check_type == 'ecu':
-                # Use regex to find number and tune, handling missing values.
                 num_match = re.search(r'Number:\s*([^,]+)', check.result)
                 tune_match = re.search(r'Tune:\s*(.*)', check.result)
                 check.ecu_number = num_match.group(1).strip() if num_match else ''
                 check.ecu_tune = tune_match.group(1).strip() if tune_match else ''
             elif check_type == 'engine':
                 check.engine_number = check.result
+            elif check_type == 'other' and ':' in check.result:
+                # For 'other', split the result into name and status
+                parts = check.result.split(':', 1)
+                check.status = parts[1].strip() if len(parts) > 1 else ''
         entry.check = check
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
@@ -1850,7 +1865,8 @@ def technical_check(event_id):
     return render_template('formula_ford/technical_check.html',
                          event=event,
                          entries=entries,
-                         check_type=check_type)
+                         check_type=check_type,
+                         other_check_name=other_check_name)
 
 @app.route('/formula_ford/events/<int:event_id>/technical_check/save', methods=['POST'])
 @login_required
@@ -1869,20 +1885,31 @@ def save_technical_check(event_id):
     elif check_type == 'engine':
         result = request.form.get(f'engine_number_{competitor_id}', '')
     elif check_type == 'other':
-        other_check_name = request.form.get('other_check_name', '')
+        other_check_name = request.form.get('other_check_name', '').strip()
         other_status = request.form.get(f'other_status_{competitor_id}', '')
-        result = f"{other_check_name}: {other_status}"
+        if other_check_name and other_status:
+            result = f"{other_check_name}: {other_status}"
     else:
         result = request.form.get(f'{check_type}_status_{competitor_id}', '') # Use the specific status name
     
     notes = request.form.get(f'notes_{competitor_id}', '').strip()
     
-    # Check if record already exists
-    record = TechnicalCheck.query.filter_by(
-        event_id=event_id,
-        competitor_id=competitor_id,
-        check_type=check_type
-    ).first()
+    record = None
+    if check_type == 'other' and other_check_name:
+        # For 'other' checks, we need to find the record based on the check name
+        record = TechnicalCheck.query.filter(
+            TechnicalCheck.event_id == event_id,
+            TechnicalCheck.competitor_id == competitor_id,
+            TechnicalCheck.check_type == 'other',
+            TechnicalCheck.result.like(f"{other_check_name}:%")
+        ).first()
+    else:
+        # For all other check types
+        record = TechnicalCheck.query.filter_by(
+            event_id=event_id,
+            competitor_id=competitor_id,
+            check_type=check_type
+        ).first()
     
     if record:
         record.result = result
@@ -2072,14 +2099,14 @@ def save_all_technical_checks(event_id):
             result = request.form.get(f'engine_number_{competitor_id}', '')
             if result: has_data = True
         elif check_type == 'other':
-            other_check_name = request.form.get('other_check_name', '')
+            other_check_name = request.form.get('other_check_name', '').strip()
             other_status = request.form.get(f'other_status_{competitor_id}', '')
             # Only create a result if both name and status are present
             if other_check_name and other_status:
                 result = f"{other_check_name}: {other_status}"
                 has_data = True
             else:
-                result = '' # Ensure result is empty if no data
+                result = ''
         else:
             result = request.form.get(f'{check_type}_status_{competitor_id}', '') # Correctly formatted name
             if result: has_data = True
@@ -2092,12 +2119,21 @@ def save_all_technical_checks(event_id):
             print("  - SKIPPING: No data or notes found.")
             continue
             
-        # Check if record already exists
-        record = TechnicalCheck.query.filter_by(
-            event_id=event_id,
-            competitor_id=competitor_id,
-            check_type=check_type
-        ).first()
+        record = None
+        if check_type == 'other' and other_check_name:
+            # For 'other' checks, find the record based on the check name
+            record = TechnicalCheck.query.filter(
+                TechnicalCheck.event_id == event_id,
+                TechnicalCheck.competitor_id == competitor_id,
+                TechnicalCheck.check_type == 'other',
+                TechnicalCheck.result.like(f"{other_check_name}:%")
+            ).first()
+        else:
+            record = TechnicalCheck.query.filter_by(
+                event_id=event_id,
+                competitor_id=competitor_id,
+                check_type=check_type
+            ).first()
         
         print(f"  - Existing record found: {record is not None}")
         if record:
