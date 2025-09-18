@@ -1,0 +1,10 @@
+Configure or remove add event (either link html for rounds to be the same, or setup html generation)
+purge database, compeditors, checks etc, 
+db imports
+year archive and retrevial
+event deletion
+comeplete database purge options with buttons
+Manage event compeitiors from dash needs to select round first
+manage events, bulk form to add competiors in one go
+
+fix formatting on checks pages technical checks, tyres, and height and weight all seem to of lost some of there styling, mainly the background on the header

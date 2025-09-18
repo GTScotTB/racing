@@ -1425,6 +1425,77 @@ def save_all_garage_numbers(event_id):
     flash('All garage numbers saved successfully!', 'success')
     return redirect(url_for('formula_ford_garage_numbers', event_id=event_id))
 
+@app.route('/formula_ford/database_management')
+@login_required
+def database_management():
+    """Renders the database management page with options for purging data."""
+    events = FormulaFordEvent.query.order_by(FormulaFordEvent.round_number).all()
+    return render_template('formula_ford/database_management.html', events=events)
+
+@app.route('/formula_ford/purge/all_events', methods=['POST'])
+@login_required
+def purge_all_events():
+    """Deletes all events and their related data."""
+    try:
+        # The database cascade should handle related deletions
+        num_deleted = FormulaFordEvent.query.delete()
+        db.session.commit()
+        flash(f"Successfully deleted {num_deleted} events and all related data.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting events: {str(e)}", "danger")
+    return redirect(url_for('database_management'))
+
+@app.route('/formula_ford/purge/all_competitors', methods=['POST'])
+@login_required
+def purge_all_competitors():
+    """Deletes all competitors and their related data."""
+    try:
+        # The database cascade should handle related deletions
+        num_deleted = FormulaFordCompetitor.query.delete()
+        db.session.commit()
+        flash(f"Successfully deleted {num_deleted} competitors and all their related data.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting competitors: {str(e)}", "danger")
+    return redirect(url_for('database_management'))
+
+@app.route('/formula_ford/purge/all_checks', methods=['POST'])
+@login_required
+def purge_all_checks():
+    """Deletes all check-related data."""
+    try:
+        num_tech = TechnicalCheck.query.delete()
+        num_tyre = TyreChecklist.query.delete()
+        num_wh = CompetitorWeightHeight.query.delete()
+        db.session.commit()
+        flash(f"Successfully deleted {num_tech} technical checks, {num_tyre} tyre checklists, and {num_wh} weight/height records.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting checks: {str(e)}", "danger")
+    return redirect(url_for('database_management'))
+
+@app.route('/formula_ford/purge/everything', methods=['POST'])
+@login_required
+def purge_everything():
+    """Deletes all data from all Formula Ford tables."""
+    try:
+        # Delete in an order that respects foreign key constraints
+        # Checks first, then entries, then competitors and events
+        TechnicalCheck.query.delete()
+        TyreChecklist.query.delete()
+        CompetitorWeightHeight.query.delete()
+        FormulaFordEventEntry.query.delete()
+        FormulaFordCompetitor.query.delete()
+        FormulaFordEvent.query.delete()
+        
+        db.session.commit()
+        flash("Successfully purged all Formula Ford data from the database.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"An error occurred during the purge: {str(e)}", "danger")
+    return redirect(url_for('database_management'))
+
 # Run the application
 if __name__ == '__main__':
     import argparse
@@ -1433,3 +1504,22 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     app.run(host='0.0.0.0', debug=True, port=args.port)
+
+@app.cli.command("delete-other-checks")
+def delete_other_checks():
+    """Deletes all technical checks with the type 'other' from the database."""
+    try:
+        # Count how many 'other' checks exist before deleting
+        num_deleted = TechnicalCheck.query.filter_by(check_type='other').count()
+        
+        if num_deleted == 0:
+            print("No 'other' technical checks found to delete.")
+            return
+
+        # Perform the deletion
+        TechnicalCheck.query.filter_by(check_type='other').delete()
+        db.session.commit()
+        print(f"Successfully deleted {num_deleted} 'other' technical checks from the database.")
+    except Exception as e:
+        db.session.rollback()
+        print(f"An error occurred: {str(e)}")

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Management - Formula Ford</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        .management-card {
+            border-left: 5px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <header class="text-center my-4">
+            <h1><i class="bi bi-server"></i> Database Management</h1>
+            <p class="lead">Use these tools to manage and purge application data. <strong>Warning: These actions are irreversible.</strong></p>
+        </header>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="row g-4">
+            <!-- Delete All Events -->
+            <div class="col-md-6">
+                <div class="card management-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Delete All Events</h5>
+                        <p class="card-text">Deletes all event rounds. This will also remove all associated event entries, checks, and records.</p>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllEventsModal">
+                            <i class="bi bi-calendar-x"></i> Delete All Events
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete All Competitors -->
+            <div class="col-md-6">
+                <div class="card management-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Delete All Competitors</h5>
+                        <p class="card-text">Permanently deletes all competitors from the database and all their associated event entries and check data.</p>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllCompetitorsModal">
+                            <i class="bi bi-people-fill"></i> Delete All Competitors
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete All Checks -->
+            <div class="col-md-6">
+                <div class="card management-card">
+                    <div class="card-body">
+                        <h5 class="card-title">Delete All Checks</h5>
+                        <p class="card-text">Deletes all technical checks, weight/height records, and tyre checklists across all events and competitors.</p>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAllChecksModal">
+                            <i class="bi bi-clipboard-x"></i> Delete All Checks
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purge Everything -->
+            <div class="col-md-6">
+                <div class="card management-card" style="border-color: #6f42c1;">
+                    <div class="card-body">
+                        <h5 class="card-title">Purge Entire Database</h5>
+                        <p class="card-text"><strong>Extreme Danger:</strong> Deletes all events, competitors, entries, and checks. Resets the application data completely.</p>
+                        <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#purgeAllModal">
+                            <i class="bi bi-exclamation-octagon-fill"></i> Purge Everything
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back Button -->
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end my-4">
+            <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Modals for Confirmation -->
+
+    <!-- Delete All Events Modal -->
+    <div class="modal fade" id="deleteAllEventsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you absolutely sure you want to delete <strong>all events</strong>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('purge_all_events') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger">Yes, Delete All Events</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Competitors Modal -->
+    <div class="modal fade" id="deleteAllCompetitorsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you absolutely sure you want to delete <strong>all competitors</strong> and all their related data? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('purge_all_competitors') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger">Yes, Delete All Competitors</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Checks Modal -->
+    <div class="modal fade" id="deleteAllChecksModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Deletion</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you absolutely sure you want to delete <strong>all technical checks, weight/height, and tyre data</strong>? This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('purge_all_checks') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-danger">Yes, Delete All Checks</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Purge Everything Modal -->
+    <div class="modal fade" id="purgeAllModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">FINAL CONFIRMATION</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>This is your final warning. This will <strong>delete all Formula Ford data</strong> including events, competitors, entries, and all checks. The database will be reset.</p>
+                    <p>This action is permanent and cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form action="{{ url_for('purge_everything') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-dark">I Understand, Purge Everything</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

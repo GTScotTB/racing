@@ -71,13 +71,17 @@
                         <a href="{{ url_for('index') }}" class="btn btn-secondary btn-action">
                             <i class="bi bi-house"></i> Back to Home
                         </a>
+                        <a href="{{ url_for('database_management') }}" class="btn btn-danger">
+                            <i class="bi bi-server"></i> Database Management
+                        </a>
                         <a href="{{ url_for('logout') }}" class="btn btn-danger btn-action">
                             <i class="bi bi-box-arrow-right"></i> Logout
                         </a>
                     </div>
                 </div>
             </div>
-        </div>
+        </div>Finally, you need to add a link to your new management page from the Formula Ford dashboard. Please open /Users/scott/Documents/GitHub/racing/templates/formula_ford_dashboard.html and add the following button, perhaps near the "Manage Events" or "Manage Competitors" buttons.
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
