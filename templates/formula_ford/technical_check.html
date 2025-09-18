@@ -65,7 +65,7 @@
                 </form>
             </div>
             <div class="col-md-6 text-end">
-                <a href="{{ url_for('event_technical_checks', event_id=event.id) }}" class="btn btn-secondary">
+                <a href="{{ url_for('formula_ford_round' + event.round_number|string) }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Technical Checks
                 </a>
             </div>

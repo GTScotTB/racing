@@ -48,7 +48,7 @@
                 </a>
             </div>
             <div class="col-md-6 text-end">
-                <a href="{{ url_for('event_technical_checks', event_id=event.id) }}" class="btn btn-secondary">
+                <a href="{{ url_for('technical_check', event_id=event.id) }}" class="btn btn-secondary">
                     <i class="bi bi-list-check"></i> Technical Checks Overview
                 </a>
             </div>
@@ -195,16 +195,22 @@
                 competitorIdInput.attr('value', competitorId);
                 form.append(competitorIdInput);
                 
-                // Add all inputs from this row
+                // Find all inputs and selects in the specific row and add their values to the new form
                 const rowId = '#row-' + competitorId;
                 $(rowId).find('input, select').each(function() {
-                    const input = $(this).clone();
-                    form.append(input);
+                    const originalInput = $(this);
+                    const hiddenInput = $('<input>');
+                    hiddenInput.attr('type', 'hidden');
+                    hiddenInput.attr('name', originalInput.attr('name'));
+                    hiddenInput.attr('value', originalInput.val());
+                    form.append(hiddenInput);
                 });
                 
-                // Submit the form
+                // Append the form to the body, submit it, and then remove it.
+                // This is a common pattern for creating dynamic form submissions.
                 $('body').append(form);
                 form.submit();
+                form.remove();
             });
         });
     </script>

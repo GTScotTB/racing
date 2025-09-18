@@ -32,15 +32,6 @@
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompetitorModal">
                 <i class="bi bi-plus-circle"></i> Add Competitor
             </button>
-            
-            <div class="float-end">
-                <a href="{{ url_for('event_technical_requirements', event_id=event.id) }}" class="btn btn-outline-success me-2">
-                    <i class="bi bi-tools"></i> Technical Requirements
-                </a>
-                <a href="{{ url_for('event_tyre_requirements', event_id=event.id) }}" class="btn btn-outline-info me-2">
-                    <i class="bi bi-circle"></i> Tyre Requirements
-                </a>
-            </div>
         </div>
 
         <!-- Competitors Table -->

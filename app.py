@@ -1627,6 +1627,7 @@ def event_competitors(event_id):
         competitor.entry_id = entry.id  # Attach entry ID to competitor
         competitor.entry_status = entry.entry_status
         competitor.weekend_car_number = entry.weekend_car_number
+        competitor.FFgarage_number = entry.FFgarage_number # Correctly attach the garage number
         competitors.append(competitor)
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number
@@ -1715,26 +1716,26 @@ def save_weight_height_row(event_id):
     # Update qualifying data
     qual_weight = request.form.get(f'weight_qual_{competitor_id}')
     qual_height = request.form.get(f'height_qual_{competitor_id}')
-    record.qual_weight = float(qual_weight) if qual_weight and qual_weight.strip() else None
-    record.qual_height = qual_height
+    record.qual_weight = float(qual_weight) if qual_weight and qual_weight.strip() else record.qual_weight
+    record.qual_height = qual_height if qual_height else record.qual_height
     
     # Update race 1 data
     r1_weight = request.form.get(f'weight_r1_{competitor_id}')
     r1_height = request.form.get(f'height_r1_{competitor_id}')
-    record.r1_weight = float(r1_weight) if r1_weight and r1_weight.strip() else None
-    record.r1_height = r1_height
+    record.r1_weight = float(r1_weight) if r1_weight and r1_weight.strip() else record.r1_weight
+    record.r1_height = r1_height if r1_height else record.r1_height
     
     # Update race 2 data
     r2_weight = request.form.get(f'weight_r2_{competitor_id}')
     r2_height = request.form.get(f'height_r2_{competitor_id}')
-    record.r2_weight = float(r2_weight) if r2_weight and r2_weight.strip() else None
-    record.r2_height = r2_height
+    record.r2_weight = float(r2_weight) if r2_weight and r2_weight.strip() else record.r2_weight
+    record.r2_height = r2_height if r2_height else record.r2_height
     
     # Update race 3 data
     r3_weight = request.form.get(f'weight_r3_{competitor_id}')
     r3_height = request.form.get(f'height_r3_{competitor_id}')
-    record.r3_weight = float(r3_weight) if r3_weight and r3_weight.strip() else None
-    record.r3_height = r3_height
+    record.r3_weight = float(r3_weight) if r3_weight and r3_weight.strip() else record.r3_weight
+    record.r3_height = r3_height if r3_height else record.r3_height
     
     db.session.commit()
     flash('Record updated successfully for competitor.', 'success')
@@ -1772,26 +1773,26 @@ def save_all_weight_height(event_id):
         # Update qualifying data
         qual_weight = request.form.get(f'weight_qual_{competitor_id}')
         qual_height = request.form.get(f'height_qual_{competitor_id}')
-        record.qual_weight = float(qual_weight) if qual_weight and qual_weight.strip() else None
-        record.qual_height = qual_height
+        record.qual_weight = float(qual_weight) if qual_weight and qual_weight.strip() else record.qual_weight
+        record.qual_height = qual_height if qual_height else record.qual_height
         
         # Update race 1 data
         r1_weight = request.form.get(f'weight_r1_{competitor_id}')
         r1_height = request.form.get(f'height_r1_{competitor_id}')
-        record.r1_weight = float(r1_weight) if r1_weight and r1_weight.strip() else None
-        record.r1_height = r1_height
+        record.r1_weight = float(r1_weight) if r1_weight and r1_weight.strip() else record.r1_weight
+        record.r1_height = r1_height if r1_height else record.r1_height
         
         # Update race 2 data
         r2_weight = request.form.get(f'weight_r2_{competitor_id}')
         r2_height = request.form.get(f'height_r2_{competitor_id}')
-        record.r2_weight = float(r2_weight) if r2_weight and r2_weight.strip() else None
-        record.r2_height = r2_height
+        record.r2_weight = float(r2_weight) if r2_weight and r2_weight.strip() else record.r2_weight
+        record.r2_height = r2_height if r2_height else record.r2_height
         
         # Update race 3 data
         r3_weight = request.form.get(f'weight_r3_{competitor_id}')
         r3_height = request.form.get(f'height_r3_{competitor_id}')
-        record.r3_weight = float(r3_weight) if r3_weight and r3_weight.strip() else None
-        record.r3_height = r3_height
+        record.r3_weight = float(r3_weight) if r3_weight and r3_weight.strip() else record.r3_weight
+        record.r3_height = r3_height if r3_height else record.r3_height
         
         saved_count += 1
     
@@ -1942,67 +1943,6 @@ def weight_height_tracking(event_id):
     return render_template('formula_ford/weight_height_tracking.html',
                          event=event,
                          entries=entries)
-
-@app.route('/formula_ford/events/<int:event_id>/technical_requirements')
-@login_required
-def event_technical_requirements(event_id):
-    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
-    requirements = EventTechnicalRequirements.query.filter_by(event_id=event_id).first()
-    
-    return render_template('formula_ford/technical_requirements.html',
-                         event=event,
-                         requirements=requirements)
-
-@app.route('/formula_ford/events/<int:event_id>/technical_checks')
-@login_required
-def event_technical_checks(event_id):
-    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
-    
-    # Get all technical checks for this event
-    technical_checks = TechnicalCheck.query.filter_by(event_id=event_id).all()
-    
-    # Group checks by competitor
-    checks_by_competitor = {}
-    for check in technical_checks:
-        if check.competitor_id not in checks_by_competitor:
-            checks_by_competitor[check.competitor_id] = []
-        checks_by_competitor[check.competitor_id].append(check)
-    
-    # Get all competitors in this event
-    entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
-    for entry in entries:
-        entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
-        entry.checks = checks_by_competitor.get(entry.competitor_id, [])
-    
-    # Sort by weekend_car_number numerically if present, otherwise by car_number
-    def numeric_sort_key(entry):
-        if entry.weekend_car_number:
-            # Convert to string if it's an integer
-            weekend_num = str(entry.weekend_car_number) if isinstance(entry.weekend_car_number, int) else entry.weekend_car_number
-            if weekend_num.isdigit():
-                return int(weekend_num)
-        if entry.competitor and entry.competitor.car_number:
-            # Convert to string if it's an integer
-            car_num = str(entry.competitor.car_number) if isinstance(entry.competitor.car_number, int) else entry.competitor.car_number
-            if car_num.isdigit():
-                return int(car_num)
-        return 999999  # Place non-numeric at the end
-            
-    entries.sort(key=numeric_sort_key)
-    
-    return render_template('formula_ford/technical_checks.html',
-                         event=event,
-                         entries=entries)
-
-@app.route('/formula_ford/events/<int:event_id>/tyre_requirements')
-@login_required
-def event_tyre_requirements(event_id):
-    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
-    requirements = EventTyreRequirements.query.filter_by(event_id=event_id).first()
-    
-    return render_template('formula_ford/tyre_requirements.html',
-                         event=event,
-                         requirements=requirements)
 
 @app.route('/formula_ford/events/<int:event_id>/technical_records')
 @login_required
@@ -2350,6 +2290,61 @@ def add_formula_ford_competitor():
         flash(f'Error adding competitor: {str(e)}', 'error')
     
     return redirect(url_for('manage_formula_ford_competitors'))
+
+@app.route('/formula_ford/competitors/<int:competitor_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_formula_ford_competitor(competitor_id):
+    competitor = db.session.get(FormulaFordCompetitor, competitor_id) or abort(404)
+
+    if request.method == 'POST':
+        # Get updated data from the form
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        team_association = request.form.get('team_association')
+        vehicle_make = request.form.get('vehicle_make')
+        vehicle_type = request.form.get('vehicle_type')
+        car_number_str = request.form.get('car_number') # Get as string first
+
+        # Basic validation
+        if not all([first_name, last_name, vehicle_make, vehicle_type, car_number_str]):
+            flash('All required fields must be filled.', 'error')
+            return redirect(url_for('edit_formula_ford_competitor', competitor_id=competitor.id))
+
+        try:
+            car_number = int(car_number_str)
+        except ValueError:
+            flash('Car number must be a valid integer.', 'error')
+            return redirect(url_for('edit_formula_ford_competitor', competitor_id=competitor.id))
+
+        # Check for duplicate car number, excluding the current competitor
+        existing_competitor_with_car_number = FormulaFordCompetitor.query.filter(
+            FormulaFordCompetitor.car_number == car_number,
+            FormulaFordCompetitor.id != competitor_id
+        ).first()
+        if existing_competitor_with_car_number:
+            flash(f'Car number {car_number} is already in use by another competitor.', 'error')
+            return redirect(url_for('edit_formula_ford_competitor', competitor_id=competitor.id))
+
+        # Update competitor object
+        competitor.first_name = first_name
+        competitor.last_name = last_name
+        competitor.team_association = team_association
+        competitor.vehicle_make = vehicle_make
+        competitor.vehicle_type = vehicle_type
+        competitor.car_number = car_number
+
+        try:
+            db.session.commit()
+            flash('Competitor updated successfully.', 'success')
+            return redirect(url_for('manage_formula_ford_competitors'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating competitor: {str(e)}', 'error')
+            # Re-render the form with current data and error
+            return render_template('formula_ford/edit_competitor.html', competitor=competitor)
+
+    # GET request: Render the edit form
+    return render_template('formula_ford/edit_competitor.html', competitor=competitor)
 
 @app.route('/formula_ford/events/<int:event_id>/entries/<int:entry_id>/edit', methods=['GET', 'POST'])
 @login_required
