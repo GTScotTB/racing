@@ -27,8 +27,11 @@
 </head>
 <body>
     <div class="container mt-4">
-        <h1 class="text-center">Technical Check - {{ event.location }} (Round {{ event.round_number }})</h1>
-        
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <h2 class="mb-0 text-center">Technical Check - {{ event.location }} (Round {{ event.round_number }})</h2>
+            </div>
+        </div>
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
