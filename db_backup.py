@@ -2,9 +2,8 @@ import json
 from datetime import date, datetime
 from app import app, db
 from models import (
-    User, FormulaFordEvent, FormulaFordCompetitor, FormulaFordEventEntry,
-    TechnicalCheck, TyreChecklist, CompetitorWeightHeight,
-    Entry, InspectionChecklist, InspectionItem, Officials, Roles
+    User, FormulaFordEvent, FormulaFordCompetitor, FormulaFordEventEntry, Officials, Roles,
+    TechnicalCheck, TyreChecklist, CompetitorWeightHeight
 )
 
 def json_serial(obj):
@@ -21,14 +20,11 @@ def backup_data():
             'formula_ford_events': FormulaFordEvent,
             'formula_ford_competitors': FormulaFordCompetitor,
             'formula_ford_event_entries': FormulaFordEventEntry,
+            'officials': Officials,
+            'roles': Roles,
             'technical_checks': TechnicalCheck,
             'tyre_checklists': TyreChecklist,
-            'competitor_weight_heights': CompetitorWeightHeight,
-            'wtac_entries': Entry,
-            'wtac_checklists': InspectionChecklist,
-            'wtac_items': InspectionItem,
-            'officials': Officials,
-            'roles': Roles
+            'competitor_weight_heights': CompetitorWeightHeight
         }
 
         for filename, model in models_to_backup.items():
