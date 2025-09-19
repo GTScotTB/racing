@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+*.venv
+
+# IDE / Editor specific
+.vscode/
+.idea/
+
+# Instance folder (for secrets, etc.)
+instance/
+
+# Other
+.DS_Store

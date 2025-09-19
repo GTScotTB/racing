@@ -68,7 +68,7 @@
                 </form>
             </div>
             <div class="col-md-6 text-end">
-                <a href="{{ url_for('formula_ford_round' + event.round_number|string) }}" class="btn btn-secondary">
+                <a href="{{ url_for('formula_ford_round', round_number=event.round_number) }}" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Technical Checks
                 </a>
             </div>
@@ -173,8 +173,8 @@
         </div>
         
         <div class="mb-4 mt-4 text-end">
-            <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Formula Ford Dashboard
+            <a href="{{ url_for('formula_ford_round', round_number=event.round_number) }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
             </a>
         </div>
     </div>

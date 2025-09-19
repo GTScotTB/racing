@@ -46,12 +46,12 @@
         
         <div class="row mb-3">
             <div class="col-md-6">
-                <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                <a href="{{ url_for('formula_ford_round', round_number=event.round_number) }}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
                 </a>
             </div>
             <div class="col-md-6 text-end">
-                <a href="{{ url_for('technical_check', event_id=event.id) }}" class="btn btn-secondary">
+                <a href="{{ url_for('technical_check', event_id=event.id) }}" class="btn btn-info">
                     <i class="bi bi-list-check"></i> Technical Checks Overview
                 </a>
             </div>

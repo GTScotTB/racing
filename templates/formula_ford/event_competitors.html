@@ -29,9 +29,12 @@
         
         <!-- Add Competitor Button -->
         <div class="mb-3">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompetitorModal">
-                <i class="bi bi-plus-circle"></i> Add Competitor
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCompetitorModal" title="Add one competitor at a time">
+                <i class="bi bi-person-plus"></i> Add Individual Competitor
             </button>
+            <a href="{{ url_for('bulk_add_competitors', event_id=event.id) }}" class="btn btn-success" title="Add multiple competitors at once">
+                <i class="bi bi-people"></i> Bulk Add Competitors
+            </a>
         </div>
 
         <!-- Competitors Table -->
@@ -109,34 +112,12 @@
 
         <!-- Back Button -->
         <div class="d-grid gap-2 d-md-flex justify-content-md-end mb-4">
-            <a href="{{ url_for('manage_formula_ford_events') }}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Events
+            <a href="{{ url_for('formula_ford_round', round_number=event.round_number) }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
             </a>
-            {% if event.round_number == 1 %}
-            <a href="{{ url_for('formula_ford_round1') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Back to Round 1
+            <a href="{{ url_for('formula_ford_dashboard') }}" class="btn btn-secondary">
+                <i class="bi bi-speedometer2"></i> Back to Dashboard
             </a>
-            {% elif event.round_number == 2 %}
-            <a href="{{ url_for('formula_ford_round2') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Back to Round 2
-            </a>
-            {% elif event.round_number == 3 %}
-            <a href="{{ url_for('formula_ford_round3') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Back to Round 3
-            </a>
-            {% elif event.round_number == 4 %}
-            <a href="{{ url_for('formula_ford_round4') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Back to Round 4
-            </a>
-            {% elif event.round_number == 5 %}
-            <a href="{{ url_for('formula_ford_round5') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Back to Round 5
-            </a>
-            {% elif event.round_number == 6 %}
-            <a href="{{ url_for('formula_ford_round6') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i> Back to Round 6
-            </a>
-            {% endif %}
         </div>
 
         <!-- Add Competitor Modal -->

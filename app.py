@@ -186,73 +186,16 @@ def formula_ford_dashboard():
     events = FormulaFordEvent.query.order_by(FormulaFordEvent.round_number).all()
     return render_template('formula_ford_dashboard.html', events=events)
 
-# Formula Ford Routes
-@app.route('/formula_ford/round1')
+# Dynamic Formula Ford Round Route
+@app.route('/formula_ford/round/<int:round_number>')
 @login_required
-def formula_ford_round1():
-    # Get the round 1 event
-    event = FormulaFordEvent.query.filter_by(round_number=1).first_or_404()
-    return render_template('formula_ford/round1.html', 
-                           user=current_user, 
-                           role=current_user.role,
-                           event=event)
-
-@app.route('/formula_ford/round2')
-@login_required
-def formula_ford_round2():
-    # Get the round 2 event
-    event = FormulaFordEvent.query.filter_by(round_number=2).first_or_404()
-    return render_template('formula_ford/round2.html', 
-                           user=current_user, 
-                           role=current_user.role,
-                           event=event)
-
-@app.route('/formula_ford/round3')
-@login_required
-def formula_ford_round3():
-    # Get the round 3 event
-    event = FormulaFordEvent.query.filter_by(round_number=3).first_or_404()
-    return render_template('formula_ford/round3.html', 
-                           user=current_user, 
-                           role=current_user.role,
-                           event=event)
-
-@app.route('/formula_ford/round4')
-@login_required
-def formula_ford_round4():
-    # Get the round 4 event
-    event = FormulaFordEvent.query.filter_by(round_number=4).first_or_404()
-    return render_template('formula_ford/round4.html', 
-                           user=current_user, 
-                           role=current_user.role,
-                           event=event)
-
-@app.route('/formula_ford/round5')
-@login_required
-def formula_ford_round5():
-    # Get the round 5 event
-    event = FormulaFordEvent.query.filter_by(round_number=5).first_or_404()
-    return render_template('formula_ford/round5.html', 
-                           user=current_user, 
-                           role=current_user.role,
-                           event=event)
-
-@app.route('/formula_ford/round6')
-@login_required
-def formula_ford_round6():
-    # Get the round 6 event
-    event = FormulaFordEvent.query.filter_by(round_number=6).first_or_404()
-    return render_template('formula_ford/round6.html', 
-                           user=current_user, 
-                           role=current_user.role,
-                           event=event)
-
-@app.route('/formula_ford/round7')
-@login_required
-def formula_ford_round7():
-    # Get the round 7 event
-    event = FormulaFordEvent.query.filter_by(round_number=7).first_or_404()
-    return render_template('formula_ford/round7.html', 
+def formula_ford_round(round_number):
+    """
+    Dynamically handles requests for any Formula Ford round.
+    """
+    event = FormulaFordEvent.query.filter_by(round_number=round_number).first_or_404()
+    template_name = f'formula_ford/round{round_number}.html'
+    return render_template(template_name,
                            user=current_user, 
                            role=current_user.role,
                            event=event)
@@ -273,6 +216,12 @@ def add_formula_ford_event():
 
         if not all([round_number, location, event_date]):
             flash('All fields are required', 'error')
+            return redirect(url_for('manage_formula_ford_events'))
+
+        # Check if the maximum number of rounds has been reached
+        total_events = FormulaFordEvent.query.count()
+        if total_events >= 20:
+            flash('Cannot add more than 20 rounds.', 'error')
             return redirect(url_for('manage_formula_ford_events'))
 
         # Check if round number already exists
@@ -383,6 +332,59 @@ def add_formula_ford_event_competitor(event_id):
             flash(f'Error adding competitor: {str(e)}', 'error')
 
     return redirect(url_for('event_competitors', event_id=event_id))
+
+@app.route('/formula_ford/events/<int:event_id>/competitors/bulk_add', methods=['GET', 'POST'])
+@login_required
+def bulk_add_competitors(event_id):
+    event = db.session.get(FormulaFordEvent, event_id) or abort(404)
+    
+    if request.method == 'POST':
+        competitor_ids_to_add = request.form.getlist('competitor_ids')
+        
+        if not competitor_ids_to_add:
+            flash('No competitors were selected.', 'warning')
+            return redirect(url_for('bulk_add_competitors', event_id=event_id))
+            
+        added_count = 0
+        for competitor_id in competitor_ids_to_add:
+            weekend_car_number = request.form.get(f'weekend_car_number_{competitor_id}')
+            garage_number = request.form.get(f'garage_number_{competitor_id}')
+            
+            # Use competitor's default car number if weekend number is not provided
+            if not weekend_car_number or not weekend_car_number.strip():
+                competitor = db.session.get(FormulaFordCompetitor, competitor_id)
+                if competitor:
+                    weekend_car_number = str(competitor.car_number)
+            
+            entry = FormulaFordEventEntry(
+                event_id=event_id,
+                competitor_id=competitor_id,
+                weekend_car_number=weekend_car_number if weekend_car_number else None,
+                FFgarage_number=garage_number if garage_number else None,
+                entry_status='Confirmed' # Default status for bulk add
+            )
+            db.session.add(entry)
+            added_count += 1
+            
+        try:
+            db.session.commit()
+            flash(f'Successfully added {added_count} competitors to the event.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding competitors: {str(e)}', 'error')
+            
+        return redirect(url_for('event_competitors', event_id=event_id))
+
+    # GET request: Show the bulk add page
+    # Get all competitors already in this event
+    entries = FormulaFordEventEntry.query.filter_by(event_id=event_id).all()
+    event_competitor_ids = [entry.competitor_id for entry in entries]
+    
+    # Get all competitors not already in this event
+    available_competitors = FormulaFordCompetitor.query.filter(FormulaFordCompetitor.id.notin_(event_competitor_ids)).order_by(FormulaFordCompetitor.car_number).all()
+    
+    return render_template('formula_ford/bulk_add_competitors.html', 
+                           event=event, available_competitors=available_competitors)
 
 @app.route('/formula_ford/events/<int:event_id>/weight_height_tracking/save_row', methods=['POST'])
 @login_required
@@ -899,6 +901,22 @@ def update_formula_ford_event():
     except Exception as e:
         db.session.rollback()
         flash(f'Error updating event: {str(e)}', 'error')
+    
+    return redirect(url_for('manage_formula_ford_events'))
+
+@app.route('/formula_ford/events/<int:event_id>/delete', methods=['POST'])
+@login_required
+def delete_formula_ford_event(event_id):
+    """Deletes a specific event and its related data."""
+    try:
+        event = db.session.get(FormulaFordEvent, event_id) or abort(404)
+        # The database cascade should handle related deletions in other tables
+        db.session.delete(event)
+        db.session.commit()
+        flash(f"Successfully deleted Event Round {event.round_number} and all related data.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error deleting event: {str(e)}", "danger")
     
     return redirect(url_for('manage_formula_ford_events'))
 

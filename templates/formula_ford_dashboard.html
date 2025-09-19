@@ -23,7 +23,7 @@
 <body>
     <div class="container">
         <header class="text-center my-4">
-            <h1>Formula Ford Dashboard</h1>
+            <h1>Formula Ford Technical Dashboard</h1>
         </header>
 
         <!-- Flash Messages -->
@@ -44,7 +44,7 @@
                     <h2>Events</h2>
                     <div class="d-grid gap-2">
                         {% for event in events %}
-                            <a href="{{ url_for('formula_ford_round' + event.round_number|string) }}" class="btn btn-primary btn-action">
+                            <a href="{{ url_for('formula_ford_round', round_number=event.round_number) }}" class="btn btn-primary btn-action">
                                 Round {{ event.round_number }} - {{ event.location }}
                             </a>
                         {% endfor %}
@@ -64,9 +64,12 @@
                             <i class="bi bi-person-plus"></i> Manage Competitors Database
                         </a>
                         {% if events|length > 0 %}
-                        <a href="{{ url_for('event_competitors', event_id=events[0].id) }}" class="btn btn-primary btn-action">
+                        <!-- Button to trigger the modal -->
+                        <button type="button" class="btn btn-primary btn-action" data-bs-toggle="modal" data-bs-target="#selectEventModal">
                             <i class="bi bi-people"></i> Manage Event Competitors
-                        </a>
+                        </button>
+                        {% else %}
+                        <button type="button" class="btn btn-primary btn-action" disabled><i class="bi bi-people"></i> Manage Event Competitors</button>
                         {% endif %}
                         <a href="{{ url_for('index') }}" class="btn btn-secondary btn-action">
                             <i class="bi bi-house"></i> Back to Home
@@ -81,8 +84,54 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- Select Event Modal -->
+        <div class="modal fade" id="selectEventModal" tabindex="-1" aria-labelledby="selectEventModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="selectEventModalLabel">Select Event</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Please select the event you wish to manage competitors for:</p>
+                        <form id="selectEventForm">
+                            <div class="mb-3">
+                                <label for="event_select" class="form-label">Event:</label>
+                                <select id="event_select" class="form-select">
+                                    <option value="">-- Choose a Round --</option>
+                                    {% for event in events %}
+                                        <option value="{{ url_for('event_competitors', event_id=event.id) }}">
+                                            Round {{ event.round_number }} - {{ event.location }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="goToEventBtn">Go to Event</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const goToEventBtn = document.getElementById('goToEventBtn');
+            const eventSelect = document.getElementById('event_select');
+
+            goToEventBtn.addEventListener('click', function () {
+                const selectedUrl = eventSelect.value;
+                if (selectedUrl) {
+                    window.location.href = selectedUrl;
+                }
+            });
+        });
+    </script>
 </body>
 </html> 

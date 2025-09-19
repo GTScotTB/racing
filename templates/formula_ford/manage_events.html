@@ -32,12 +32,6 @@
             background-color: #0a58ca;
         }
     </style>
-    <script>
-        // Confirmation popup when deleting an event (if needed in future)
-        function confirmDelete() {
-            return confirm('Are you sure you want to delete this event?');
-        }
-    </script>
 </head>
 <body>
     <div class="container">
@@ -98,10 +92,21 @@
                                     <td>
                                         <input type="date" name="event_date" value="{{ event.event_date.strftime('%Y-%m-%d') if event.event_date else '' }}">
                                     </td>
-                                    <!-- Hidden input for the event id and save button -->
+                                    <!-- Hidden input for the event id and action buttons -->
                                     <td>
-                                        <input type="hidden" name="event_id" value="{{ event.id }}">
-                                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                        <div class="btn-group">
+                                            <input type="hidden" name="event_id" value="{{ event.id }}">
+                                            <button type="submit" class="btn btn-primary btn-sm">
+                                                <i class="bi bi-save"></i> Save
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#deleteEventModal"
+                                                    data-event-id="{{ event.id }}"
+                                                    data-event-round="{{ event.round_number }}">
+                                                <i class="bi bi-trash"></i> Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </form>
                             </tr>
@@ -152,8 +157,48 @@
                 </div>
             </div>
         </div>
+
+        <!-- Delete Event Modal -->
+        <div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deleteEventModalLabel">Confirm Event Deletion</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete <strong id="eventToDelete"></strong>?</p>
+                        <p class="text-danger"><strong>Warning:</strong> This will permanently delete the event and all associated data (competitor entries, technical checks, etc.). This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <form id="deleteEventForm" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-danger">Delete Event</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Script to handle the delete confirmation modal
+        document.addEventListener('DOMContentLoaded', function () {
+            var deleteModal = document.getElementById('deleteEventModal');
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                var button = event.relatedTarget;
+                var eventId = button.getAttribute('data-event-id');
+                var eventRound = button.getAttribute('data-event-round');
+                
+                var modalText = deleteModal.querySelector('#eventToDelete');
+                var modalForm = deleteModal.querySelector('#deleteEventForm');
+                
+                modalText.textContent = 'Round ' + eventRound;
+                modalForm.action = '/formula_ford/events/' + eventId + '/delete';
+            });
+        });
+    </script>
 </body>
 </html> 
