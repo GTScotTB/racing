@@ -194,8 +194,7 @@ def formula_ford_round(round_number):
     Dynamically handles requests for any Formula Ford round.
     """
     event = FormulaFordEvent.query.filter_by(round_number=round_number).first_or_404()
-    template_name = f'formula_ford/round{round_number}.html'
-    return render_template(template_name,
+    return render_template('formula_ford/round.html',
                            user=current_user, 
                            role=current_user.role,
                            event=event)
