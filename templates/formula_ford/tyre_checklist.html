@@ -60,7 +60,7 @@
             <div class="card-header bg-dark text-white">
                 <div class="d-flex justify-content-between align-items-center">
                     <h2 class="mb-0">Tyre Checklist - Round {{ event.round_number }} - {{ event.location }}</h2>
-                    <a href="{{ url_for('formula_ford_round' + event.round_number|string) }}" class="btn btn-light">
+                    <a href="{{ url_for('formula_ford_round', round_number=event.round_number) }}" class="btn btn-light">
                         <i class="bi bi-arrow-left"></i> Back to Round {{ event.round_number }}
                     </a>
                 </div>
