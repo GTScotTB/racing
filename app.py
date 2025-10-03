@@ -266,6 +266,7 @@ def event_competitors(event_id):
         competitor.entry_status = entry.entry_status
         competitor.weekend_car_number = entry.weekend_car_number
         competitor.FFgarage_number = entry.FFgarage_number # Correctly attach the garage number
+        competitor.is_national = entry.is_national # Attach the national status
         competitors.append(competitor)
     
     # Sort by weekend_car_number numerically if present, otherwise by car_number

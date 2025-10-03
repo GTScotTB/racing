@@ -54,6 +54,7 @@
                                 <th>Vehicle</th>
                                 <th>Status</th>
                                 <th>Weekend #</th>
+                                <th>National</th>
                                 <th>Garage #</th>
                                 <th>Actions</th>
                             </tr>
@@ -83,6 +84,9 @@
                                     {% endif %}
                                 </td>
                                 <td>{{ competitor.weekend_car_number if competitor.weekend_car_number else '-' }}</td>
+                                <td>
+                                    <span class="badge {{ 'bg-info' if competitor.is_national else 'bg-secondary' }}">{{ 'Yes' if competitor.is_national else 'No' }}</span>
+                                </td>
                                 <td>{{ competitor.FFgarage_number if competitor.FFgarage_number else '-' }}</td>
                                 <td>
                                     <div class="btn-group">
