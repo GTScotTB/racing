@@ -297,6 +297,7 @@ def add_formula_ford_event_competitor(event_id):
     weekend_car_number = request.form.get('weekend_car_number')
     FFgarage_number = request.form.get('FFgarage_number')
     entry_status = request.form.get('entry_status')
+    is_national = request.form.get('is_national') == 'yes'
 
     # Check if the competitor is already in the event
     existing_entry = FormulaFordEventEntry.query.filter_by(
@@ -319,7 +320,8 @@ def add_formula_ford_event_competitor(event_id):
             competitor_id=competitor_id,
             weekend_car_number=weekend_car_number if weekend_car_number else None,
             FFgarage_number=FFgarage_number if FFgarage_number else None,
-            entry_status=entry_status.title()
+            entry_status=entry_status.title(),
+            is_national=is_national
         )
         db.session.add(entry)
         
@@ -1101,6 +1103,7 @@ def edit_event_entry(event_id, entry_id):
         weekend_car_number = request.form.get('weekend_car_number')
         FFgarage_number = request.form.get('FFgarage_number')
         notes = request.form.get('notes')
+        is_national = request.form.get('is_national') == 'yes'
         
         if not entry_status:
             flash('Entry status is required', 'error')
@@ -1111,6 +1114,7 @@ def edit_event_entry(event_id, entry_id):
             entry.weekend_car_number = weekend_car_number
             entry.FFgarage_number = FFgarage_number
             entry.notes = notes
+            entry.is_national = is_national
             db.session.commit()
             flash('Entry updated successfully', 'success')
             return redirect(url_for('event_competitors', event_id=event_id))
@@ -1211,6 +1215,7 @@ def formula_ford_tyre_checklist(event_id):
     # Load competitor data for each entry
     for entry in entries:
         entry.competitor = db.session.get(FormulaFordCompetitor, entry.competitor_id)
+        # The 'is_national' flag is already on the entry object, so no change needed here.
         
         # Check if there's already a tyre checklist record
         entry.tyre_checklist = TyreChecklist.query.filter_by(

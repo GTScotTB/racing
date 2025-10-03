@@ -53,6 +53,7 @@
                                     <th>Vehicle</th>
                                     <th>Weekend Car # (Optional)</th>
                                     <th>Garage # (Optional)</th>
+                                    <th>National Competitor</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,6 +71,12 @@
                                     </td>
                                     <td>
                                         <input type="text" class="form-control weekend-input" name="garage_number_{{ competitor.id }}" placeholder="Garage #">
+                                    </td>
+                                    <td>
+                                        <select class="form-select" name="is_national_{{ competitor.id }}">
+                                            <option value="no" selected>No</option>
+                                            <option value="yes">Yes</option>
+                                        </select>
                                     </td>
                                 </tr>
                                 {% endfor %}

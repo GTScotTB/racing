@@ -145,6 +145,7 @@ class FormulaFordEventEntry(db.Model):
     weekend_car_number = db.Column(db.String(10))
     FFgarage_number = db.Column(db.String(10))
     notes = db.Column(db.Text)
+    is_national = db.Column(db.Boolean, default=False, nullable=False)
     
     # Relationships
     event = db.relationship('FormulaFordEvent', back_populates='entries')

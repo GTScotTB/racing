@@ -38,6 +38,9 @@
             z-index: 1000;
             max-width: 400px;
         }
+        .non-national-competitor {
+            background-color: #f8d7da !important; /* A light red color */
+        }
     </style>
 </head>
 <body>
@@ -104,7 +107,7 @@
                             </thead>
                             <tbody>
                                 {% for entry in entries %}
-                                <tr id="row-{{ entry.competitor_id }}">
+                                <tr id="row-{{ entry.competitor_id }}" class="{{ 'non-national-competitor' if not entry.is_national }}">
                                     <td>{{ entry.competitor.car_number }}</td>
                                     <td>{{ entry.weekend_car_number if entry.weekend_car_number else '-' }}</td>
                                     <td>{{ entry.competitor.first_name }} {{ entry.competitor.last_name }}</td>
